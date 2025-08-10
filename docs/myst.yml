@@ -17,4 +17,4 @@ project:
     - file: index.md
     - file: installation.md
     - file: api_reference.md
-    - file: examples.md
+    - file: examples.ipynb
