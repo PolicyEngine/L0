@@ -8,7 +8,13 @@ and intelligent sampling, based on Louizos, Welling, & Kingma (2017).
 __version__ = "0.1.0"
 
 from .distributions import HardConcrete
-from .layers import L0Linear, L0Conv2d, L0DepthwiseConv2d, SparseMLP, prune_model
+from .layers import (
+    L0Linear,
+    L0Conv2d,
+    L0DepthwiseConv2d,
+    SparseMLP,
+    prune_model,
+)
 from .gates import L0Gate, SampleGate, FeatureGate, HybridGate
 from .penalties import (
     compute_l0_penalty,
