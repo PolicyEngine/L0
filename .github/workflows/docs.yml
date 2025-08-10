@@ -26,10 +26,13 @@ jobs:
         with:
           python-version: '3.13'
       
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+      
       - name: Install dependencies
         run: |
-          pip install mystmd
-          pip install -e .
+          uv pip install mystmd
+          uv pip install -e .
       
       - name: Build MyST documentation
         run: |

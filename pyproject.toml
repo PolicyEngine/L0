@@ -36,11 +36,7 @@ dev = [
     "pre-commit>=3.0",
 ]
 docs = [
-    "jupyter-book>=2.0",
-    "myst-nb>=2.0",
-    "sphinx-design>=0.5",
-    "matplotlib>=3.3",
-    "pandas>=1.3",
+    "mystmd>=1.3",
 ]
 examples = [
     "matplotlib>=3.3",

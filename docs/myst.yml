@@ -1,5 +1,8 @@
 # See docs at: https://mystmd.org/guide/frontmatter
 version: 1
+site:
+  title: L0 Regularization Documentation
+  template: book-theme
 project:
   id: 49a903d1-4b09-43df-b8e9-8b296a3ddba6
   title: L0 Regularization for Neural Networks

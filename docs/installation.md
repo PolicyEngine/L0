@@ -23,8 +23,11 @@ For the latest development version or to contribute:
 git clone https://github.com/PolicyEngine/L0.git
 cd L0
 
-# Install in development mode
-pip install -e .
+# Install in development mode (recommended: use uv)
+uv pip install -e .
+
+# Or with make
+make install
 ```
 
 ## Installing with Development Dependencies
@@ -32,11 +35,11 @@ pip install -e .
 If you want to contribute or run tests:
 
 ```bash
-# Install with all development dependencies
-pip install -e ".[dev]"
+# Install with all development dependencies (using uv)
+uv pip install -e ".[dev]"
 
 # Or using make
-make install
+make install-dev
 ```
 
 This installs additional tools for:
