@@ -1,110 +1,95 @@
-# L0 Regularization Documentation
+# L0 Regularization for Neural Networks
 
-```{toctree}
-:hidden:
-:maxdepth: 2
-
-quickstart
-theory
-api/index
-examples/index
-contributing
-```
-
-## Welcome
-
-L0 Regularization is a PyTorch package implementing the L0 penalty method from [Louizos, Welling, & Kingma (2017)](https://arxiv.org/abs/1712.01312). It enables:
-
-- **Neural Network Sparsification**: Automatically prune weights during training
-- **Intelligent Sampling**: Select optimal subsets from large datasets
-- **Feature Selection**: Identify important features with differentiable gates
+This library provides a PyTorch implementation of L0 regularization using the Hard Concrete distribution, as introduced in {cite}`louizos2018learning`. L0 regularization enables learning truly sparse neural networks by penalizing the number of non-zero parameters rather than their magnitude.
 
 ## Key Features
 
-::::{grid} 1 1 2 3
-:gutter: 3
-
-:::{grid-item-card} 🧠 Hard Concrete Distribution
-:link: theory
-:link-type: doc
-
-Differentiable approximation of the L0 norm using stochastic gates
-:::
-
-:::{grid-item-card} 🔧 Sparse Layers
-:link: api/layers
-:link-type: doc
-
-Drop-in replacements for PyTorch layers with built-in sparsity
-:::
-
-:::{grid-item-card} 📊 Smart Selection
-:link: api/gates
-:link-type: doc
-
-Intelligent sample and feature selection for calibration tasks
-:::
-
-::::
-
-## Quick Installation
-
-```bash
-pip install l0
-```
-
-## Simple Example
-
-```python
-from l0 import L0Linear, compute_l0l2_penalty
-
-# Create a sparse layer
-layer = L0Linear(100, 50, init_sparsity=0.7)
-
-# Use in training
-output = layer(input_data)
-penalty = compute_l0l2_penalty(model)
-loss = task_loss + penalty
-```
+- **True Sparsity**: Learn networks with actual zero weights, not just small values
+- **Hard Concrete Distribution**: Differentiable approximation of discrete gate variables
+- **Flexible Architecture Support**: Works with Linear, Conv2d, and custom layers
+- **L0L2 Combined Regularization**: Option to combine L0 penalty with L2 weight decay
+- **Structured Sparsity**: Support for channel-wise and filter-wise pruning
+- **Standalone Gates**: Use L0 gates independently for feature/sample selection
 
 ## Why L0 Regularization?
 
-Traditional regularization methods (L1, L2) approximate sparsity. L0 directly optimizes for the number of non-zero parameters:
+Traditional regularization methods like L1 and L2 penalties encourage small weights but rarely produce exact zeros. L0 regularization directly penalizes the count of non-zero parameters:
 
-- **True Sparsity**: Actually zeros out parameters, not just shrinks them
-- **Differentiable**: Uses Hard Concrete distribution for gradient-based optimization
-- **Hardware Efficient**: Sparse models run faster and use less memory
+```{math}
+\mathcal{L}_{\text{total}} = \mathcal{L}_{\text{task}} + \lambda \|\theta\|_0
+```
 
-## PolicyEngine Integration
+Where $\|\theta\|_0$ counts the number of non-zero parameters. Since this is non-differentiable, we use the Hard Concrete distribution to create a differentiable approximation through stochastic gates.
 
-This package is designed to work seamlessly with PolicyEngine's calibration systems, particularly for intelligent household sampling in survey data.
+## The Hard Concrete Distribution
 
-## Getting Started
+The Hard Concrete distribution {cite}`maddison2017concrete,jang2016categorical` provides a continuous relaxation of discrete Bernoulli variables. For each parameter, we learn a gate $z_i \in [0, 1]$ that determines whether the parameter is active:
 
-:::::{grid} 2
-:gutter: 3
+1. **During Training**: Gates are sampled stochastically from the Hard Concrete distribution
+2. **During Inference**: Gates become deterministic based on learned probabilities
+3. **After Training**: Parameters with gate probabilities below a threshold can be pruned
 
-::::{grid-item}
-**New to L0?**
+The distribution is parameterized by:
+- **Temperature** ($\tau$): Controls the "hardness" of the gates (lower = more binary-like)
+- **Stretch** ($\gamma, \zeta$): Extends the support to $[\gamma, \zeta]$ to encourage exact zeros
 
-Start with our [quickstart guide](quickstart) to understand the basics.
-::::
+## Quick Example
 
-::::{grid-item}
-**Coming from PolicyEngine?**
+```python
+import torch
+from l0.layers import L0Linear
 
-See our [integration guide](examples/policyengine_integration) for migration instructions.
-::::
+# Create a sparse linear layer
+layer = L0Linear(
+    in_features=784,
+    out_features=256,
+    temperature=0.5,
+    init_sparsity=0.9  # Start with 90% sparsity
+)
 
-:::::
+# Use in training
+x = torch.randn(32, 784)
+output = layer(x)
+
+# Get L0 penalty for loss
+l0_penalty = layer.get_l0_penalty()
+loss = task_loss + lambda_l0 * l0_penalty
+
+# Check current sparsity
+print(f"Sparsity: {layer.get_sparsity():.2%}")
+```
+
+## Installation
+
+Install directly from GitHub:
+
+```bash
+pip install git+https://github.com/PolicyEngine/L0.git
+```
+
+## Documentation Structure
+
+- [Installation Guide](installation.md): Detailed installation instructions and requirements
+- [API Reference](api_reference.md): Complete API documentation for all modules
+- [Examples](examples.md): Comprehensive examples and use cases
 
 ## Citation
 
+If you use this library in your research, please cite the original L0 regularization paper:
+
 ```bibtex
-@article{louizos2017learning,
-  title={Learning Sparse Neural Networks through L0 Regularization},
+@article{louizos2018learning,
+  title={Learning sparse neural networks through {$L_0$} regularization},
   author={Louizos, Christos and Welling, Max and Kingma, Diederik P},
   journal={arXiv preprint arXiv:1712.01312},
-  year={2017}
+  year={2018}
 }
 ```
+
+## Contributing
+
+We welcome contributions! Please see our [GitHub repository](https://github.com/PolicyEngine/L0) for more information.
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
