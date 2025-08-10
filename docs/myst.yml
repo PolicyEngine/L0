@@ -3,11 +3,13 @@ version: 1
 site:
   title: L0 Regularization Documentation
   template: book-theme
+  options:
+    logo: _static/logo.png
 project:
   id: 49a903d1-4b09-43df-b8e9-8b296a3ddba6
-  title: L0 Regularization for Neural Networks
-  description: PyTorch implementation of L0 regularization using the Hard Concrete distribution for structured neural network sparsity
-  keywords: [L0 regularization, neural networks, sparsity, PyTorch, Hard Concrete, machine learning]
+  title: L0 Regularization
+  description: PyTorch implementation of L0 regularization using the Hard Concrete distribution for differentiable sparsity with any gradient-based optimization
+  keywords: [L0 regularization, sparsity, PyTorch, Hard Concrete, machine learning, gradient descent, optimization]
   authors:
     - name: PolicyEngine Contributors
       github: PolicyEngine
@@ -17,4 +19,11 @@ project:
     - file: index.md
     - file: installation.md
     - file: api_reference.md
-    - file: examples.ipynb
+    - title: Examples
+      children:
+        - file: examples/overview.md
+        - file: examples/basic_l0.ipynb
+        - file: examples/neural_networks.ipynb
+        - file: examples/feature_selection.ipynb
+        - file: examples/comparison.ipynb
+        - file: examples/advanced.ipynb
