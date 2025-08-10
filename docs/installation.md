@@ -81,14 +81,16 @@ pytest tests/ --cov=l0 --cov-report=html
 To build the documentation locally:
 
 ```bash
-# Using MyST (recommended)
-myst start
+# Using make (recommended)
+make docs-serve  # Start development server at http://localhost:3000
+make docs        # Build static HTML
 
-# Or build static site
-myst build --html
+# Or using MyST directly
+cd docs && myst start      # Start development server
+cd docs && myst build --html  # Build static site
 ```
 
-The documentation will be available at `http://localhost:3000` (for `myst start`) or in `_build/html/` (for static build).
+The documentation will be available at `http://localhost:3000` (for development server) or in `docs/_build/` (for static build).
 
 ## Troubleshooting
 
