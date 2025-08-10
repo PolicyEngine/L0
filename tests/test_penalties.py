@@ -66,7 +66,9 @@ class TestPenalties:
         relative_diff = abs(penalty.item() - expected) / max(
             penalty.item(), expected
         )
-        assert relative_diff < 0.75  # Allow up to 75% relative difference due to init variance
+        assert (
+            relative_diff < 0.75
+        )  # Allow up to 75% relative difference due to init variance
 
     def test_compute_l0l2_penalty(self, simple_model):
         """Test computing combined L0L2 penalty."""
