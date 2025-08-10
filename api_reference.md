@@ -4,10 +4,6 @@
 
 ### l0.distributions
 
-```{eval-rst}
-.. module:: l0.distributions
-```
-
 #### HardConcrete
 
 The core distribution for L0 regularization, providing a differentiable approximation of discrete gates.
@@ -57,10 +53,6 @@ sparsity = gates.get_sparsity()  # Float between 0 and 1
 ```
 
 ### l0.layers
-
-```{eval-rst}
-.. module:: l0.layers
-```
 
 #### L0Linear
 
@@ -240,10 +232,6 @@ for x, y in dataloader:
 
 ### l0.gates
 
-```{eval-rst}
-.. module:: l0.gates
-```
-
 Standalone gate modules for feature and sample selection.
 
 #### L0Gate
@@ -367,10 +355,6 @@ class HybridGate(nn.Module):
 ```
 
 ### l0.penalties
-
-```{eval-rst}
-.. module:: l0.penalties
-```
 
 Utility functions for penalty computation and management.
 
