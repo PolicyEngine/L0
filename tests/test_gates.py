@@ -230,7 +230,6 @@ class TestHybridGate:
         random_count = (selection_type == "random").sum()
 
         # Check we have both types
-        total = len(selection_type)
         assert l0_count >= 0  # May be 0 due to stretch
         assert random_count > 0  # Should always have some random
 
