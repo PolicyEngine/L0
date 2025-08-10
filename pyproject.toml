@@ -66,7 +66,7 @@ target-version = "py313"
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "N", "UP"]
-ignore = ["E501", "N812"]  # E501: Line length handled by black, N812: Allow F as alias for functional
+ignore = ["E501", "N812", "UP038"]  # E501: Line length handled by black, N812: Allow F as alias for functional, UP038: Use tuple for isinstance
 
 [tool.mypy]
 python_version = "3.13"
