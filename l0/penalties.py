@@ -266,7 +266,7 @@ class PenaltyTracker:
     Useful for monitoring and visualization.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.history: dict[str, list[float]] = defaultdict(list)
 
     def log(self, name: str, value: float) -> None:
@@ -317,10 +317,10 @@ class PenaltyTracker:
             return {}
 
         return {
-            "mean": np.mean(values),
-            "std": np.std(values),
-            "min": np.min(values),
-            "max": np.max(values),
+            "mean": float(np.mean(values)),
+            "std": float(np.std(values)),
+            "min": float(np.min(values)),
+            "max": float(np.max(values)),
             "last": values[-1],
         }
 

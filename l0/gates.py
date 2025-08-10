@@ -46,9 +46,10 @@ class L0Gate(nn.Module):
 
     def get_gates(self) -> torch.Tensor:
         """Get current gate values."""
-        return self.gates()
+        gates_result: torch.Tensor = self.gates()
+        return gates_result
 
-    def apply(self, x: torch.Tensor, dim: int = 0) -> torch.Tensor:
+    def apply_gates(self, x: torch.Tensor, dim: int = 0) -> torch.Tensor:
         """
         Apply gates to a tensor along specified dimension.
 

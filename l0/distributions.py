@@ -45,7 +45,7 @@ class HardConcrete(nn.Module):
 
         # Set gate dimensions
         if output_dim is None:
-            self.gate_size = (input_dim,)
+            self.gate_size: tuple[int, ...] = (input_dim,)
         else:
             self.gate_size = (input_dim, output_dim)
 

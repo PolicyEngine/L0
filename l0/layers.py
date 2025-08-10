@@ -97,7 +97,8 @@ class L0Linear(nn.Module):
         """Get L2 penalty (weight norm squared)."""
         if not self.use_l2:
             return torch.tensor(0.0, device=self.weight.device)
-        return (self.weight**2).sum()
+        l2_penalty: torch.Tensor = (self.weight**2).sum()
+        return l2_penalty
 
     def get_sparsity(self) -> float:
         """Get current sparsity level."""
@@ -236,7 +237,8 @@ class L0Conv2d(nn.Module):
         """Get L2 penalty."""
         if not self.use_l2:
             return torch.tensor(0.0, device=self.weight.device)
-        return (self.weight**2).sum()
+        l2_penalty: torch.Tensor = (self.weight**2).sum()
+        return l2_penalty
 
     def get_sparsity(self) -> float:
         """Get current sparsity level."""
@@ -299,7 +301,8 @@ class L0DepthwiseConv2d(nn.Module):
 
         # Apply gates to input channels
         gated_input = input * gates
-        return self.depthwise_conv(gated_input)
+        output: torch.Tensor = self.depthwise_conv(gated_input)
+        return output
 
     def get_l0_penalty(self) -> torch.Tensor:
         """Get L0 penalty."""
@@ -376,7 +379,7 @@ class SparseMLP(nn.Module):
         """Get total L0 penalty across all layers."""
         l0_loss = torch.tensor(0.0)
         for module in self.modules():
-            if isinstance(module, L0Linear | L0Conv2d | L0DepthwiseConv2d):
+            if isinstance(module, (L0Linear, L0Conv2d, L0DepthwiseConv2d)):
                 l0_loss = l0_loss + module.get_l0_penalty()
         return l0_loss
 
