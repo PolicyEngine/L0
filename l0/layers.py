@@ -391,7 +391,7 @@ class SparseMLP(nn.Module):
         l2_loss = torch.tensor(0.0)
         for module in self.modules():
             if hasattr(module, "get_l2_penalty"):
-                l2_loss = l2_loss + module.get_l2_penalty()
+                l2_loss = l2_loss + module.get_l2_penalty()  # type: ignore[operator]
         return l2_loss
 
     def get_sparsity_stats(self) -> dict[str, dict[str, Any]]:
@@ -429,11 +429,11 @@ def prune_model(model: nn.Module, threshold: float = 0.05) -> nn.Module:
     for module in model.modules():
         if hasattr(module, "weight_gates"):
             with torch.no_grad():
-                prob_active = module.weight_gates.get_active_prob()
+                prob_active = module.weight_gates.get_active_prob()  # type: ignore[union-attr,operator]
                 mask = (prob_active > threshold).float()
 
                 # Reshape mask to match weight dimensions
-                if len(module.weight.shape) > len(mask.shape):
+                if len(module.weight.shape) > len(mask.shape):  # type: ignore[arg-type]
                     mask = mask.view(module.weight.shape)
 
                 # Zero out pruned weights
@@ -441,7 +441,7 @@ def prune_model(model: nn.Module, threshold: float = 0.05) -> nn.Module:
 
         elif hasattr(module, "channel_gates"):
             with torch.no_grad():
-                prob_active = module.channel_gates.get_active_prob()
+                prob_active = module.channel_gates.get_active_prob()  # type: ignore[union-attr,operator]
                 mask = (prob_active > threshold).float()
 
                 # Apply channel-wise masking

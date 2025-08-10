@@ -31,7 +31,7 @@ def compute_l0_penalty(model: nn.Module) -> torch.Tensor:
 
     for module in model.modules():
         if hasattr(module, "get_l0_penalty"):
-            penalty = penalty + module.get_l0_penalty()
+            penalty = penalty + module.get_l0_penalty()  # type: ignore[operator]
 
     return penalty
 
@@ -149,7 +149,7 @@ def get_active_parameter_count(model: nn.Module) -> int:
 
     for module in model.modules():
         if hasattr(module, "get_l0_penalty"):
-            total += int(module.get_l0_penalty().item())
+            total += int(module.get_l0_penalty().item())  # type: ignore[operator]
 
     return total
 
@@ -245,9 +245,9 @@ def update_temperatures(model: nn.Module, temperature: float) -> None:
     for module in model.modules():
         # Check for HardConcrete gates in layers
         if hasattr(module, "weight_gates"):
-            module.weight_gates.temperature = temperature
+            module.weight_gates.temperature = temperature  # type: ignore[union-attr]
         if hasattr(module, "channel_gates"):
-            module.channel_gates.temperature = temperature
+            module.channel_gates.temperature = temperature  # type: ignore[union-attr]
         if hasattr(module, "gates"):
             if hasattr(module.gates, "temperature"):
                 module.gates.temperature = temperature
