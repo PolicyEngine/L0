@@ -5,7 +5,6 @@ These gates can be used independently of neural network layers
 for tasks like survey calibration and feature selection.
 """
 
-
 import numpy as np
 import torch
 import torch.nn as nn

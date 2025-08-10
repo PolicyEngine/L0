@@ -1,6 +1,5 @@
 """Tests for standalone gate modules."""
 
-
 import numpy as np
 import pytest
 import torch
