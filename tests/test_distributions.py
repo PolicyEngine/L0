@@ -153,7 +153,9 @@ class TestHardConcrete:
         assert high_var > 0 and low_var > 0
         # Optional: lower temp typically has lower variance but not guaranteed with stretch
         # We just verify both are producing variable outputs
-        assert high_var < 0.5 and low_var < 0.5  # Both should have reasonable variance
+        assert (
+            high_var < 0.5 and low_var < 0.5
+        )  # Both should have reasonable variance
 
     def test_stretch_parameters(self):
         """Test stretch parameter effects."""

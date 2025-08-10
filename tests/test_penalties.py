@@ -63,7 +63,9 @@ class TestPenalties:
 
         # L2 penalty computation may have larger differences due to weight initialization
         # Allow for reasonable tolerance based on weight magnitudes
-        relative_diff = abs(penalty.item() - expected) / max(penalty.item(), expected)
+        relative_diff = abs(penalty.item() - expected) / max(
+            penalty.item(), expected
+        )
         assert relative_diff < 0.5  # Allow up to 50% relative difference
 
     def test_compute_l0l2_penalty(self, simple_model):
