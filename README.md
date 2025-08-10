@@ -129,6 +129,10 @@ Run tests with:
 pytest tests/ -v --cov=l0
 ```
 
+## Acknowledgments
+
+This implementation is inspired by and builds upon the [original L0 regularization code](https://github.com/AMLab-Amsterdam/L0_regularization) by AMLab Amsterdam, which accompanied the paper by Louizos et al. (2018).
+
 ## Citation
 
 If you use this package, please cite:

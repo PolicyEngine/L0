@@ -73,6 +73,10 @@ pip install git+https://github.com/PolicyEngine/L0.git
 - [API Reference](api_reference.md): Complete API documentation for all modules
 - [Examples](examples.md): Comprehensive examples and use cases
 
+## Acknowledgments
+
+This implementation is inspired by and builds upon the [original L0 regularization code](https://github.com/AMLab-Amsterdam/L0_regularization) by AMLab Amsterdam, which accompanied the paper by Louizos et al. (2018). Our implementation provides a modernized PyTorch API with additional features for calibration and structured sparsity.
+
 ## Citation
 
 If you use this library in your research, please cite the original L0 regularization paper:
