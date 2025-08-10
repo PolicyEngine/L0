@@ -42,7 +42,9 @@ class TestPenalties:
         expected += simple_model.fc1.get_l0_penalty().item()
         expected += simple_model.fc2.get_l0_penalty().item()
 
-        assert abs(penalty.item() - expected) < 0.1  # Allow small numerical difference
+        assert (
+            abs(penalty.item() - expected) < 0.1
+        )  # Allow small numerical difference
 
     def test_compute_l2_penalty(self, simple_model):
         """Test computing L2 penalty."""

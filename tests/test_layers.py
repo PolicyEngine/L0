@@ -237,7 +237,9 @@ class TestSparseMLP:
             if hasattr(module, "get_l0_penalty"):
                 expected += module.get_l0_penalty().item()
 
-        assert abs(l0_loss.item() - expected) < 0.1  # Allow small numerical difference
+        assert (
+            abs(l0_loss.item() - expected) < 0.1
+        )  # Allow small numerical difference
 
     def test_sparsity_stats(self, model):
         """Test getting sparsity statistics."""
