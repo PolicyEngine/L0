@@ -1,0 +1,54 @@
+# Book settings
+title: L0 Regularization
+author: PolicyEngine
+logo: logo.png  # Add a logo file later
+copyright: "2025"
+only_build_toc_files: true
+
+# Force re-execution of notebooks on each build
+execute:
+  execute_notebooks: force
+  timeout: 600
+
+# Launch buttons
+launch_buttons:
+  notebook_interface: classic
+  binderhub_url: ""
+  colab_url: "https://colab.research.google.com"
+  thebe: false
+
+# HTML outputs
+html:
+  favicon: favicon.ico  # Add a favicon later
+  use_edit_page_button: true
+  use_repository_button: true
+  use_issues_button: true
+  use_multitoc_numbering: false
+  extra_footer: |
+    <p>
+    L0 Regularization package by <a href="https://policyengine.org">PolicyEngine</a>
+    </p>
+  home_page_in_navbar: true
+
+# Repository information
+repository:
+  url: https://github.com/PolicyEngine/L0
+  path_to_book: docs
+  branch: main
+
+# Add extensions
+sphinx:
+  extra_extensions:
+    - sphinx_design
+    - sphinx.ext.autodoc
+    - sphinx.ext.napoleon
+    - sphinx.ext.viewcode
+  config:
+    html_theme: sphinx_book_theme
+    html_theme_options:
+      repository_url: https://github.com/PolicyEngine/L0
+      use_repository_button: true
+      use_issues_button: true
+      use_edit_page_button: true
+      path_to_docs: docs
+      home_page_in_toc: true
