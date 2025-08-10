@@ -376,7 +376,7 @@ class SparseMLP(nn.Module):
         """Get total L0 penalty across all layers."""
         l0_loss = torch.tensor(0.0)
         for module in self.modules():
-            if isinstance(module, (L0Linear, L0Conv2d, L0DepthwiseConv2d)):
+            if isinstance(module, L0Linear | L0Conv2d | L0DepthwiseConv2d):
                 l0_loss = l0_loss + module.get_l0_penalty()
         return l0_loss
 

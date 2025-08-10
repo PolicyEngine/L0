@@ -65,8 +65,8 @@ class TestPenalties:
         """Test computing combined L0L2 penalty."""
         from l0.penalties import (
             compute_l0_penalty,
-            compute_l2_penalty,
             compute_l0l2_penalty,
+            compute_l2_penalty,
         )
 
         penalty = compute_l0l2_penalty(
