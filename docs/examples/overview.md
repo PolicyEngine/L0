@@ -1,4 +1,4 @@
-# Examples Overview
+# Overview
 
 L0 regularization provides differentiable sparsity for any model trained with gradient-based optimization. While commonly used with neural networks, L0 works with any differentiable model including:
 

@@ -23,7 +23,12 @@ project:
       children:
         - file: examples/overview.md
         - file: examples/basic_l0.ipynb
+          title: Basic L0 & Gradient Descent
         - file: examples/neural_networks.ipynb
+          title: Neural Networks with L0
         - file: examples/feature_selection.ipynb
+          title: Feature Selection
         - file: examples/comparison.ipynb
+          title: L0 vs L1 Comparison
         - file: examples/advanced.ipynb
+          title: Advanced Techniques
