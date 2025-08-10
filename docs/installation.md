@@ -122,7 +122,7 @@ if torch.cuda.is_available():
 
 3. **Type hints not working**
    - L0 uses Python 3.10+ union syntax (`|`)
-   - For older Python versions, install `from __future__ import annotations`
+   - Ensure you're using Python 3.10 or higher
 
 ## Platform Support
 
