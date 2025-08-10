@@ -1,0 +1,17 @@
+# See docs at: https://mystmd.org/guide/frontmatter
+version: 1
+project:
+  id: 49a903d1-4b09-43df-b8e9-8b296a3ddba6
+  title: L0 Regularization for Neural Networks
+  description: PyTorch implementation of L0 regularization using the Hard Concrete distribution for structured neural network sparsity
+  keywords: [L0 regularization, neural networks, sparsity, PyTorch, Hard Concrete, machine learning]
+  authors:
+    - name: PolicyEngine Contributors
+      github: PolicyEngine
+  github: https://github.com/PolicyEngine/L0
+  bibliography: references.bib
+  toc:
+    - file: index.md
+    - file: installation.md
+    - file: api_reference.md
+    - file: examples.md
