@@ -1,5 +1,10 @@
 # API Reference
 
+```{note}
+For complete auto-generated API documentation from docstrings, MyST Parser with Sphinx is recommended.
+The current MyST command-line tool (mystmd) focuses on simplicity and doesn't yet support autodoc.
+```
+
 ## Core Modules
 
 ### l0.distributions
