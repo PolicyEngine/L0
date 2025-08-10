@@ -1,9 +1,9 @@
 """Tests for standalone gate modules."""
 
+
+import numpy as np
 import pytest
 import torch
-import numpy as np
-from typing import List
 
 
 class TestL0Gate:

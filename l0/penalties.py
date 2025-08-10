@@ -5,11 +5,12 @@ Provides functions for computing penalties, tracking sparsity,
 and managing temperature schedules.
 """
 
+from collections import defaultdict
+from typing import Any
+
+import numpy as np
 import torch
 import torch.nn as nn
-from typing import Dict, Any, List, Optional, Union
-import numpy as np
-from collections import defaultdict
 
 
 def compute_l0_penalty(model: nn.Module) -> torch.Tensor:
@@ -89,7 +90,7 @@ def compute_l0l2_penalty(
     return l0_lambda * l0_penalty + l2_lambda * l2_penalty
 
 
-def get_sparsity_stats(model: nn.Module) -> Dict[str, Dict[str, Any]]:
+def get_sparsity_stats(model: nn.Module) -> dict[str, dict[str, Any]]:
     """
     Get sparsity statistics for all L0 layers in a model.
 
@@ -266,7 +267,7 @@ class PenaltyTracker:
     """
 
     def __init__(self):
-        self.history: Dict[str, List[float]] = defaultdict(list)
+        self.history: dict[str, list[float]] = defaultdict(list)
 
     def log(self, name: str, value: float) -> None:
         """
@@ -281,7 +282,7 @@ class PenaltyTracker:
         """
         self.history[name].append(value)
 
-    def get_history(self, name: str) -> List[float]:
+    def get_history(self, name: str) -> list[float]:
         """
         Get history for a metric.
 
@@ -297,7 +298,7 @@ class PenaltyTracker:
         """
         return self.history[name]
 
-    def get_stats(self, name: str) -> Dict[str, float]:
+    def get_stats(self, name: str) -> dict[str, float]:
         """
         Get statistics for a metric.
 
@@ -343,8 +344,8 @@ class PenaltyTracker:
 
     def plot_history(
         self,
-        metrics: Optional[List[str]] = None,
-        save_path: Optional[str] = None,
+        metrics: list[str] | None = None,
+        save_path: str | None = None,
     ) -> None:
         """
         Plot metric history.

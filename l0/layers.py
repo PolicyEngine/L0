@@ -5,10 +5,12 @@ Implements sparse layers using the Hard Concrete distribution
 for various layer types (Linear, Conv2d, etc.).
 """
 
+from typing import Any
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from typing import Optional, Dict, Any, Tuple
+
 from .distributions import HardConcrete
 
 
@@ -136,9 +138,9 @@ class L0Conv2d(nn.Module):
         self,
         in_channels: int,
         out_channels: int,
-        kernel_size: int | Tuple[int, int],
-        stride: int | Tuple[int, int] = 1,
-        padding: int | Tuple[int, int] = 0,
+        kernel_size: int | tuple[int, int],
+        stride: int | tuple[int, int] = 1,
+        padding: int | tuple[int, int] = 0,
         bias: bool = True,
         temperature: float = 0.5,
         init_sparsity: float = 0.5,
@@ -254,9 +256,9 @@ class L0DepthwiseConv2d(nn.Module):
     def __init__(
         self,
         in_channels: int,
-        kernel_size: int | Tuple[int, int],
-        stride: int | Tuple[int, int] = 1,
-        padding: int | Tuple[int, int] = 0,
+        kernel_size: int | tuple[int, int],
+        stride: int | tuple[int, int] = 1,
+        padding: int | tuple[int, int] = 0,
         bias: bool = True,
         temperature: float = 0.5,
         init_sparsity: float = 0.5,
@@ -389,7 +391,7 @@ class SparseMLP(nn.Module):
                 l2_loss = l2_loss + module.get_l2_penalty()
         return l2_loss
 
-    def get_sparsity_stats(self) -> Dict[str, Dict[str, Any]]:
+    def get_sparsity_stats(self) -> dict[str, dict[str, Any]]:
         """Get sparsity statistics for all layers."""
         stats = {}
         for name, module in self.named_modules():

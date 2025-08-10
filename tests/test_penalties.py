@@ -1,9 +1,9 @@
 """Tests for penalty computation utilities."""
 
+
 import pytest
 import torch
 import torch.nn as nn
-from typing import Dict
 
 
 class TestPenalties:
@@ -64,7 +64,7 @@ class TestPenalties:
 
     def test_compute_l0l2_penalty(self, simple_model):
         """Test computing combined L0L2 penalty."""
-        from l0.penalties import compute_l0l2_penalty
+        from l0.penalties import compute_l0_penalty, compute_l2_penalty, compute_l0l2_penalty
 
         penalty = compute_l0l2_penalty(
             simple_model, l0_lambda=1e-3, l2_lambda=1e-4

@@ -5,10 +5,10 @@ Based on Louizos, Welling, & Kingma (2017): "Learning Sparse Neural Networks
 through L0 Regularization" (https://arxiv.org/abs/1712.01312)
 """
 
+import math
+
 import torch
 import torch.nn as nn
-import math
-from typing import Optional, Tuple, Union
 
 
 class HardConcrete(nn.Module):
@@ -36,7 +36,7 @@ class HardConcrete(nn.Module):
     def __init__(
         self,
         input_dim: int,
-        output_dim: Optional[int] = None,
+        output_dim: int | None = None,
         temperature: float = 0.5,
         stretch: float = 0.1,
         init_mean: float = 0.5,
@@ -70,7 +70,7 @@ class HardConcrete(nn.Module):
             self.qz_logits.data.fill_(init_val)
 
     def forward(
-        self, input_shape: Optional[Tuple[int, ...]] = None
+        self, input_shape: tuple[int, ...] | None = None
     ) -> torch.Tensor:
         """
         Sample or compute gates.

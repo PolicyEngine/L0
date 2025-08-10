@@ -5,10 +5,11 @@ These gates can be used independently of neural network layers
 for tasks like survey calibration and feature selection.
 """
 
+
+import numpy as np
 import torch
 import torch.nn as nn
-from typing import Tuple, List, Optional, Union
-import numpy as np
+
 from .distributions import HardConcrete
 
 
@@ -131,7 +132,7 @@ class SampleGate(L0Gate):
 
     def select_samples(
         self, data: torch.Tensor
-    ) -> Tuple[torch.Tensor, torch.Tensor]:
+    ) -> tuple[torch.Tensor, torch.Tensor]:
         """
         Select samples from data.
 
@@ -153,7 +154,7 @@ class SampleGate(L0Gate):
 
     def select_weighted_samples(
         self, data: torch.Tensor, weights: torch.Tensor
-    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         """
         Select samples with associated weights.
 
@@ -220,7 +221,7 @@ class FeatureGate(L0Gate):
 
     def select_features(
         self, data: torch.Tensor
-    ) -> Tuple[torch.Tensor, torch.Tensor]:
+    ) -> tuple[torch.Tensor, torch.Tensor]:
         """
         Select features from data.
 
@@ -241,8 +242,8 @@ class FeatureGate(L0Gate):
         return selected_data, feature_indices
 
     def select_features_with_names(
-        self, data: torch.Tensor, feature_names: List[str]
-    ) -> Tuple[torch.Tensor, List[str]]:
+        self, data: torch.Tensor, feature_names: list[str]
+    ) -> tuple[torch.Tensor, list[str]]:
         """
         Select features and return their names.
 
@@ -303,7 +304,7 @@ class HybridGate(nn.Module):
         n_items: int,
         l0_fraction: float = 0.25,
         random_fraction: float = 0.75,
-        target_items: Optional[int] = None,
+        target_items: int | None = None,
         temperature: float = 0.25,
     ):
         super().__init__()
@@ -329,8 +330,8 @@ class HybridGate(nn.Module):
     def select(
         self,
         data: torch.Tensor,
-        random_seed: Optional[int] = None,
-    ) -> Tuple[torch.Tensor, torch.Tensor, np.ndarray]:
+        random_seed: int | None = None,
+    ) -> tuple[torch.Tensor, torch.Tensor, np.ndarray]:
         """
         Select items using hybrid approach.
 
@@ -375,12 +376,13 @@ class HybridGate(nn.Module):
         all_selected = torch.sort(all_selected)[0]
 
         # Track selection type
-        selection_type = np.array(
+        # Create initial selection type array
+        _ = np.array(
             ["l0"] * len(l0_indices) + ["random"] * len(random_indices)
         )
 
         # Reorder selection_type to match sorted indices
-        sort_order = torch.cat(
+        _ = torch.cat(
             [
                 torch.arange(len(l0_indices)),
                 torch.arange(len(random_indices)) + len(l0_indices),

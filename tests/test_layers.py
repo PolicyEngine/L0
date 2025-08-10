@@ -1,11 +1,9 @@
 """Tests for L0 regularized layers."""
 
+
 import pytest
 import torch
-import torch.nn as nn
 import torch.nn.functional as F
-import math
-from unittest.mock import patch
 
 
 class TestL0Linear:
@@ -284,7 +282,7 @@ class TestSparseMLP:
         model.eval()
 
         # Get sparsity before pruning
-        stats_before = model.get_sparsity_stats()
+        _ = model.get_sparsity_stats()
 
         # Prune model
         pruned_model = prune_model(model, threshold=0.05)

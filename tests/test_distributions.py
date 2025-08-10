@@ -1,9 +1,10 @@
 """Tests for HardConcrete distribution."""
 
+import math
+
 import pytest
 import torch
-import torch.nn as nn
-import math
+
 from l0.distributions import HardConcrete
 
 
