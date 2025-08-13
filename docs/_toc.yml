@@ -1,0 +1,22 @@
+# Table of contents
+format: jb-book
+root: index
+chapters:
+  - file: quickstart
+  - file: theory
+    title: Theory & Background
+  - file: api/index
+    title: API Reference
+    sections:
+      - file: api/distributions
+      - file: api/layers
+      - file: api/gates
+      - file: api/penalties
+  - file: examples/index
+    title: Examples
+    sections:
+      - file: examples/neural_pruning
+      - file: examples/sample_selection
+      - file: examples/feature_selection
+      - file: examples/policyengine_integration
+  - file: contributing
