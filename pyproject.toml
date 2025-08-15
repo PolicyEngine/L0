@@ -34,6 +34,7 @@ dev = [
     "mypy>=0.900",
     "ruff>=0.0.280",
     "pre-commit>=3.0",
+    "build>=1.3",
 ]
 docs = [
     "mystmd>=1.3",
@@ -79,3 +80,8 @@ ignore_missing_imports = true
 testpaths = ["tests"]
 python_files = ["test_*.py"]
 addopts = "-v --cov=l0 --cov-report=term-missing"
+
+[dependency-groups]
+dev = [
+    "build>=1.3.0",
+]
