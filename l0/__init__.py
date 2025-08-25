@@ -26,6 +26,7 @@ from .penalties import (
     get_sparsity_stats,
     update_temperatures,
 )
+from .sparse import SparseL0Linear
 
 __all__ = [
     # Distributions
@@ -36,6 +37,8 @@ __all__ = [
     "L0DepthwiseConv2d",
     "SparseMLP",
     "prune_model",
+    # Sparse
+    "SparseL0Linear",
     # Gates
     "L0Gate",
     "SampleGate",
