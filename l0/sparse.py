@@ -4,8 +4,8 @@ L0 regularized linear models for sparse data.
 Implements L0-regularized linear regression that efficiently handles
 sparse input matrices without converting them to dense format.
 """
+# ruff: noqa: N803 N806
 
-from typing import Optional, Tuple, Union
 
 import numpy as np
 import torch
@@ -46,7 +46,7 @@ class SparseL0Linear(nn.Module):
         gamma: float = -0.1,
         zeta: float = 1.1,
         init_keep_prob: float = 0.5,
-        device: Union[str, torch.device] = "cpu",
+        device: str | torch.device = "cpu",
     ):
         super().__init__()
         self.n_features = n_features
@@ -125,7 +125,7 @@ class SparseL0Linear(nn.Module):
 
     def forward(
         self,
-        X: Union[torch.sparse.Tensor, sp.spmatrix],
+        X: torch.sparse.Tensor | sp.spmatrix,
         deterministic: bool = False,
     ) -> torch.Tensor:
         """
@@ -212,7 +212,7 @@ class SparseL0Linear(nn.Module):
     def fit(
         self,
         X_sparse: sp.spmatrix,
-        y: Union[torch.Tensor, np.ndarray],
+        y: torch.Tensor | np.ndarray,
         lambda_reg: float = 0.01,
         lr: float = 0.01,
         epochs: int = 1000,
@@ -298,7 +298,7 @@ class SparseL0Linear(nn.Module):
         return self
 
     def predict(
-        self, X_sparse: Union[sp.spmatrix, torch.sparse.Tensor]
+        self, X_sparse: sp.spmatrix | torch.sparse.Tensor
     ) -> torch.Tensor:
         """
         Make predictions on new data.

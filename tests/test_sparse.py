@@ -1,6 +1,7 @@
 """
 Tests for sparse L0 linear models.
 """
+# ruff: noqa: N806
 
 import numpy as np
 import pytest
@@ -80,7 +81,6 @@ class TestSparseL0Linear:
         # Check feature selection performance
         selected = model.get_selected_features().cpu().numpy()
         true_positives = len(set(selected) & set(nonzero_indices))
-        false_positives = len(set(selected) - set(nonzero_indices))
 
         # We expect to recover at least 60% of true features
         recall = (
