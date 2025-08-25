@@ -67,12 +67,14 @@ class SparseL0Linear(nn.Module):
         # L0 gate parameters
         mu = torch.log(torch.tensor(init_keep_prob / (1 - init_keep_prob)))
         self.log_alpha = nn.Parameter(
-            torch.normal(mu, 0.01, size=(n_features,), device=self.device)
+            torch.normal(
+                mu.item(), 0.01, size=(n_features,), device=self.device
+            )
         )
 
         # Cache for sparse tensor conversion
-        self._cached_X_torch = None
-        self._cached_X_shape = None
+        self._cached_X_torch: torch.sparse.Tensor | None = None
+        self._cached_X_shape: tuple[int, int] | None = None
 
     def _convert_sparse_to_torch(
         self, X_sparse: sp.spmatrix
@@ -165,7 +167,7 @@ class SparseL0Linear(nn.Module):
         if self.fit_intercept and self.bias is not None:
             y = y + self.bias
 
-        return y
+        return y  # type: ignore[no-any-return]
 
     def get_l0_penalty(self) -> torch.Tensor:
         """
