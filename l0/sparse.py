@@ -4,6 +4,7 @@ L0 regularized linear models for sparse data.
 Implements L0-regularized linear regression that efficiently handles
 sparse input matrices without converting them to dense format.
 """
+
 # ruff: noqa: N803 N806
 
 

@@ -1,6 +1,7 @@
 """
 Tests for sparse L0 linear models.
 """
+
 # ruff: noqa: N806
 
 import numpy as np
