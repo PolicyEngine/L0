@@ -1,0 +1,28 @@
+- changes:
+    added:
+    - Initial release of L0 regularization package
+    - HardConcrete distribution implementation
+    - L0Linear, L0Conv2d, L0DepthwiseConv2d layers
+    - SparseMLP for structured sparsity
+    - L0Gate, SampleGate, FeatureGate, HybridGate for selection tasks
+    - L0, L2, and combined L0L2 penalty computation
+    - Temperature scheduling for training stability
+    - Comprehensive test suite
+    - GitHub Actions CI/CD pipeline
+  date: 2025-01-01 00:00:00
+  version: 0.1.0
+- bump: patch
+  changes:
+    fixed:
+    - "CI/CD: Separate PR and push workflows"
+  date: 2025-01-02 00:00:00
+- bump: patch
+  changes:
+    added:
+    - Sparse calibration stress test example
+  date: 2025-01-03 00:00:00
+- bump: patch
+  changes:
+    added:
+    - PolicyEngine workflow best practices integration
+  date: 2025-08-26 22:20:57
