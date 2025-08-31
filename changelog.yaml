@@ -14,7 +14,7 @@
 - bump: patch
   changes:
     fixed:
-    - "CI/CD: Separate PR and push workflows"
+    - 'CI/CD: Separate PR and push workflows'
   date: 2025-01-02 00:00:00
 - bump: patch
   changes:
@@ -26,3 +26,9 @@
     added:
     - PolicyEngine workflow best practices integration
   date: 2025-08-26 22:20:57
+- bump: minor
+  changes:
+    added:
+    - Positive weight constraints for calibration module
+    - PolicyEngine workflow best practices integration
+  date: 2025-08-31 13:00:17

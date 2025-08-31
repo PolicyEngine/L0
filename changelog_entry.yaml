@@ -1,5 +1,0 @@
-- bump: minor
-  changes:
-    added:
-    - Positive weight constraints for calibration module
-    - PolicyEngine workflow best practices integration
