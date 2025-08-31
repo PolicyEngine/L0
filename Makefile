@@ -1,6 +1,6 @@
 # L0 Regularization Package Makefile
 
-.PHONY: help install install-dev test format lint type-check clean docs docs-serve
+.PHONY: help install install-dev test format type-check clean docs docs-serve changelog build publish
 
 help:
 	@echo "Available commands:"
@@ -8,9 +8,11 @@ help:
 	@echo "  make install-dev  Install with development dependencies"
 	@echo "  make test         Run tests with coverage"
 	@echo "  make format       Format code with black"
-	@echo "  make lint         Run ruff linter"
 	@echo "  make type-check   Run mypy type checker"
+	@echo "  make changelog    Update changelog and version"
 	@echo "  make clean        Remove build artifacts"
+	@echo "  make build        Build Python package"
+	@echo "  make publish      Publish to PyPI"
 	@echo "  make docs         Build documentation"
 	@echo "  make docs-serve   Serve documentation locally"
 
@@ -26,11 +28,15 @@ test:
 format:
 	black . -l 79
 
-lint:
-	ruff check . --fix
-
 type-check:
 	mypy l0 --ignore-missing-imports
+
+changelog:
+	build-changelog changelog.yaml --output changelog.yaml --update-last-date --start-from 0.1.0 --append-file changelog_entry.yaml
+	build-changelog changelog.yaml --org PolicyEngine --repo L0 --output CHANGELOG.md --template .github/changelog_template.md
+	bump-version changelog.yaml pyproject.toml
+	rm changelog_entry.yaml || true
+	touch changelog_entry.yaml
 
 clean:
 	rm -rf build/
@@ -46,6 +52,12 @@ clean:
 	find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
 	find . -type f -name "*.pyc" -delete
 
+build:
+	python -m build
+
+publish:
+	twine upload dist/*
+
 docs:
 	cd docs && myst build --html
 
@@ -53,6 +65,6 @@ docs-serve:
 	cd docs && myst start
 
 # Convenience targets
-all: format lint type-check test
+all: format type-check test
 
-ci: lint type-check test
+ci: format type-check test

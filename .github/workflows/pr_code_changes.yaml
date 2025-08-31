@@ -1,0 +1,11 @@
+name: PR Code Quality
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint:
+    uses: ./.github/workflows/reusable_lint.yaml
+  
+  test:
+    uses: ./.github/workflows/reusable_test.yaml
