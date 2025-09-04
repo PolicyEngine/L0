@@ -62,7 +62,7 @@ class TestSparseCalibrationWeights:
         model.fit(
             M=M,
             y=y,
-            lambda_l0=0.00015,  # Tuned for ~50% sparsity with relative loss
+            lambda_l0=0.0005,  # Tuned for ~50% sparsity with relative loss
             lambda_l2=1e-6,
             lr=0.2,
             epochs=2000,
