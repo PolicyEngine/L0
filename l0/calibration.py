@@ -382,11 +382,17 @@ class SparseCalibrationWeights(nn.Module):
                     # Calculate sparsity percentage
                     sparsity_pct = 100 * (1 - active_info['count'] / self.n_features)
                     
+                    # Calculate components of the actual loss being minimized
+                    actual_data_loss = data_loss.item()
+                    actual_l0_loss = l0_loss.item()
+                    actual_total_loss = loss.item()
+                    
                     if target_groups is not None:
                         print(
                             f"Epoch {epoch+1:4d}: "
                             f"mean_group_loss={mean_group_loss:.1%}, "
                             f"max_error={max_rel_err:.1%}, "
+                            f"total_loss={actual_total_loss:.3f}, "
                             f"active={active_info['count']:4d}/{self.n_features} ({sparsity_pct:.1f}% sparse)"
                         )
                     else:
@@ -394,6 +400,7 @@ class SparseCalibrationWeights(nn.Module):
                             f"Epoch {epoch+1:4d}: "
                             f"mean_error={mean_rel_err:.1%}, "
                             f"max_error={max_rel_err:.1%}, "
+                            f"total_loss={actual_total_loss:.3f}, "
                             f"active={active_info['count']:4d}/{self.n_features} ({sparsity_pct:.1f}% sparse)"
                         )
 
