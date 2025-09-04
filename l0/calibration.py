@@ -294,12 +294,14 @@ class SparseCalibrationWeights(nn.Module):
         # Compute group weights for loss averaging
         if target_groups is not None:
             # Convert to tensor
-            target_groups = torch.tensor(target_groups, dtype=torch.long, device=self.device)
-            
+            target_groups = torch.tensor(
+                target_groups, dtype=torch.long, device=self.device
+            )
+
             # Calculate group weights: 1 / group_size for each target
             unique_groups = torch.unique(target_groups)
             group_weights = torch.zeros_like(y)
-            
+
             for group_id in unique_groups:
                 group_mask = target_groups == group_id
                 group_size = group_mask.sum().item()
@@ -327,13 +329,19 @@ class SparseCalibrationWeights(nn.Module):
                 # Adding 1 to avoid division by zero
                 relative_errors = (y - y_pred) / (y + 1)
                 # Apply group weights and then average
-                weighted_squared_errors = relative_errors.pow(2) * group_weights
-                data_loss = weighted_squared_errors.sum()  # Sum because weights already normalize
+                weighted_squared_errors = (
+                    relative_errors.pow(2) * group_weights
+                )
+                data_loss = (
+                    weighted_squared_errors.sum()
+                )  # Sum because weights already normalize
             else:
                 # Standard MSE with group weighting
                 squared_errors = (y - y_pred).pow(2)
                 weighted_squared_errors = squared_errors * group_weights
-                data_loss = weighted_squared_errors.sum()  # Sum because weights already normalize
+                data_loss = (
+                    weighted_squared_errors.sum()
+                )  # Sum because weights already normalize
 
             l0_loss = self.get_l0_penalty()
             loss = data_loss + lambda_l0 * l0_loss
@@ -354,7 +362,7 @@ class SparseCalibrationWeights(nn.Module):
                     active_info = self.get_active_weights()
                     weights = self.get_weights(deterministic=True)
                     active_weights = weights[weights > 0]
-                    
+
                     # Compute relative errors for meaningful output
                     y_det = self.forward(M, deterministic=True)
                     if loss_type == "relative":
@@ -362,31 +370,35 @@ class SparseCalibrationWeights(nn.Module):
                     else:
                         # For MSE, show relative errors anyway for interpretability
                         rel_errors = torch.abs((y - y_det) / (y + 1))
-                    
+
                     # For reporting, we can show both overall and group-averaged errors
                     mean_rel_err = rel_errors.mean().item()
                     max_rel_err = rel_errors.max().item()
-                    
+
                     # Compute mean group loss if groups are used
                     if target_groups is not None:
                         # Calculate mean loss per group
                         group_losses = []
                         for group_id in torch.unique(target_groups):
                             group_mask = target_groups == group_id
-                            group_mean_err = rel_errors[group_mask].mean().item()
+                            group_mean_err = (
+                                rel_errors[group_mask].mean().item()
+                            )
                             group_losses.append(group_mean_err)
                         mean_group_loss = np.mean(group_losses)
                     else:
                         mean_group_loss = mean_rel_err
-                    
+
                     # Calculate sparsity percentage
-                    sparsity_pct = 100 * (1 - active_info['count'] / self.n_features)
-                    
+                    sparsity_pct = 100 * (
+                        1 - active_info["count"] / self.n_features
+                    )
+
                     # Calculate components of the actual loss being minimized
                     actual_data_loss = data_loss.item()
                     actual_l0_loss = l0_loss.item()
                     actual_total_loss = loss.item()
-                    
+
                     if target_groups is not None:
                         print(
                             f"Epoch {epoch+1:4d}: "
