@@ -1,8 +1,0 @@
-- bump: minor
-  changes:
-    added:
-    - Group-wise loss averaging for calibration to balance contributions from targets with different cardinalities
-    - Improved training output with meaningful error percentages and sparsity statistics
-    changed:
-    - Simplified active weight detection in SparseCalibrationWeights (removed threshold parameter)
-    - Enhanced verbose output during calibration training to show relative errors and sparsity percentage
