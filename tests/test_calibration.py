@@ -36,6 +36,7 @@ class TestSparseCalibrationWeights:
         N_active = 1000  # 50% sparsity
 
         np.random.seed(42)
+        torch.manual_seed(42)
 
         # Generate data with sparse ground truth
         M_dense = np.random.lognormal(mean=1.5, sigma=0.25, size=(Q, N))
@@ -88,6 +89,7 @@ class TestSparseCalibrationWeights:
         N = 500
 
         np.random.seed(123)
+        torch.manual_seed(123)
 
         # Large-scale data
         M = sp.random(Q, N, density=0.5, format="csr")
@@ -136,6 +138,9 @@ class TestSparseCalibrationWeights:
         Q = 50
         N = 200
 
+        np.random.seed(123)
+        torch.manual_seed(123)
+
         M = sp.random(Q, N, density=0.3, format="csr")
         y = np.random.randn(Q) + 10
 
@@ -149,7 +154,7 @@ class TestSparseCalibrationWeights:
                 y,
                 lambda_l0=lambda_l0,
                 lr=0.1,
-                epochs=500,
+                epochs=2000,
                 loss_type="relative",
                 verbose=False,
             )
@@ -191,6 +196,9 @@ class TestSparseCalibrationWeights:
         N = 50
         Q = 10
 
+        np.random.seed(123)
+        torch.manual_seed(123)
+
         M = sp.random(Q, N, density=0.5, format="csr")
         y = np.random.randn(Q)
 
@@ -210,6 +218,9 @@ class TestSparseCalibrationWeights:
         """Test that L2 penalty prevents weight explosion."""
         N = 100
         Q = 20
+
+        np.random.seed(123)
+        torch.manual_seed(123)
 
         M = sp.random(Q, N, density=0.3, format="csr")
         y = np.random.randn(Q) * 100  # Large scale
@@ -246,6 +257,7 @@ class TestSparseCalibrationWeights:
         Q = 3 + 18 + 18  # 39 total targets
 
         np.random.seed(42)
+        torch.manual_seed(42)
 
         # Create matrix with varying scales
         M = sp.random(Q, N, density=0.3, format="csr")
@@ -338,6 +350,9 @@ class TestSparseCalibrationWeights:
         """Test edge cases for group-wise averaging."""
         N = 50
         Q = 10
+
+        np.random.seed(42)
+        torch.manual_seed(42)
 
         M = sp.random(Q, N, density=0.3, format="csr")
         y = np.random.uniform(100, 1000, size=Q)
