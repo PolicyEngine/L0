@@ -1,0 +1,4 @@
+- bump: patch
+  changes:
+    removed:
+      - Removed mypy type checking from CI/CD workflow to eliminate type annotation overhead
