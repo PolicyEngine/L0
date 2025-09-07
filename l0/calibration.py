@@ -34,6 +34,9 @@ class SparseCalibrationWeights(nn.Module):
         Initial probability of keeping each weight active
     init_weight_scale : float
         Initial scale for log weights (controls initial weight magnitude)
+    log_weight_jitter_sd : float
+        Standard deviation of noise added to log weights at start of fit() to break symmetry.
+        Set to 0 to disable jitter. Default is 0.5 for backward compatibility.
     device : str or torch.device
         Device to run computations on ('cpu' or 'cuda')
     """
@@ -46,6 +49,7 @@ class SparseCalibrationWeights(nn.Module):
         zeta: float = 1.1,
         init_keep_prob: float = 0.5,
         init_weight_scale: float = 1.0,
+        log_weight_jitter_sd: float = 0.5,
         device: str | torch.device = "cpu",
     ):
         super().__init__()
@@ -53,6 +57,7 @@ class SparseCalibrationWeights(nn.Module):
         self.beta = beta
         self.gamma = gamma
         self.zeta = zeta
+        self.log_weight_jitter_sd = log_weight_jitter_sd
         self.device = torch.device(device)
 
         # Log weights to ensure positivity via exp transformation
@@ -312,8 +317,11 @@ class SparseCalibrationWeights(nn.Module):
             # No grouping - all targets weighted equally
             group_weights = torch.ones_like(y)
 
-        # Initialize weights
-        nn.init.normal_(self.log_weight, 0, 0.5)
+        # Add jitter to weights to break symmetry (if jitter_sd > 0)
+        if self.log_weight_jitter_sd > 0:
+            with torch.no_grad():
+                jitter = torch.randn_like(self.log_weight) * self.log_weight_jitter_sd
+                self.log_weight.data += jitter
 
         # Setup optimizer
         optimizer = torch.optim.Adam([self.log_weight, self.log_alpha], lr=lr)

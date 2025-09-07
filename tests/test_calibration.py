@@ -58,6 +58,7 @@ class TestSparseCalibrationWeights:
             zeta=1.1,
             init_keep_prob=0.3,
             init_weight_scale=0.5,
+            log_weight_jitter_sd=0.5,  # Maintain backward compatibility in tests
         )
 
         model.fit(
