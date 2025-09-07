@@ -21,7 +21,7 @@ class TestSparseCalibrationWeights:
         M = sp.random(Q, N, density=0.3, format="csr")
         y = np.random.randn(Q) + 10
 
-        model = SparseCalibrationWeights(n_features=N)
+        model = SparseCalibrationWeights(n_features=N, init_weights=1.0)
         model.fit(M, y, epochs=100, verbose=False)
 
         # Check positivity
@@ -57,8 +57,8 @@ class TestSparseCalibrationWeights:
             gamma=-0.1,
             zeta=1.1,
             init_keep_prob=0.3,
-            init_weight_scale=0.5,
-            log_weight_jitter_sd=0.5,  # Maintain backward compatibility in tests
+            init_weights=1.0,  # Start all weights at 1.0
+            weight_jitter_sd=0.5,  # Add jitter for symmetry breaking
         )
 
         model.fit(
@@ -172,7 +172,7 @@ class TestSparseCalibrationWeights:
     def test_get_active_weights(self):
         """Test active weight extraction."""
         N = 100
-        model = SparseCalibrationWeights(n_features=N)
+        model = SparseCalibrationWeights(n_features=N, init_weights=1.0)
 
         # Simple test data
         M = sp.eye(N, format="csr")
@@ -203,7 +203,7 @@ class TestSparseCalibrationWeights:
         M = sp.random(Q, N, density=0.5, format="csr")
         y = np.random.randn(Q)
 
-        model = SparseCalibrationWeights(n_features=N)
+        model = SparseCalibrationWeights(n_features=N, init_weights=1.0)
         model.fit(M, y, epochs=100, verbose=False)
 
         # Multiple predictions should be identical
@@ -358,7 +358,7 @@ class TestSparseCalibrationWeights:
         M = sp.random(Q, N, density=0.3, format="csr")
         y = np.random.uniform(100, 1000, size=Q)
 
-        model = SparseCalibrationWeights(n_features=N)
+        model = SparseCalibrationWeights(n_features=N, init_weights=1.0)
 
         # Test 1: All targets in one group (should behave like no grouping)
         target_groups_single = np.zeros(Q, dtype=int)
@@ -422,3 +422,122 @@ class TestSparseCalibrationWeights:
             assert (
                 np.mean(small_group_errors) < 0.5
             ), "Small groups should not be ignored"
+
+    def test_init_weights_options(self):
+        """Test different weight initialization options."""
+        N = 50
+        
+        # Test 1: Default (None) should give all weights = 1.0
+        model_default = SparseCalibrationWeights(n_features=N)
+        with torch.no_grad():
+            weights = torch.exp(model_default.log_weight)
+            assert torch.allclose(weights, torch.ones(N), atol=1e-6)
+        
+        # Test 2: Scalar initialization
+        model_scalar = SparseCalibrationWeights(n_features=N, init_weights=2.5)
+        with torch.no_grad():
+            weights = torch.exp(model_scalar.log_weight)
+            assert torch.allclose(weights, torch.full((N,), 2.5), atol=1e-6)
+        
+        # Test 3: Array initialization
+        init_array = np.random.uniform(0.5, 2.0, size=N)
+        model_array = SparseCalibrationWeights(n_features=N, init_weights=init_array)
+        with torch.no_grad():
+            weights = torch.exp(model_array.log_weight).cpu().numpy()
+            np.testing.assert_allclose(weights, init_array, rtol=1e-5)
+        
+        # Test 4: Wrong shape should raise error
+        with pytest.raises(ValueError, match="must have shape"):
+            SparseCalibrationWeights(n_features=N, init_weights=np.ones(N + 1))
+    
+    def test_weight_jitter(self):
+        """Test that weight jitter works correctly."""
+        N = 100
+        Q = 20
+        
+        np.random.seed(42)
+        torch.manual_seed(42)
+        
+        M = sp.random(Q, N, density=0.3, format="csr")
+        y = np.random.randn(Q) + 10
+        
+        # Model with jitter
+        model_with_jitter = SparseCalibrationWeights(
+            n_features=N, 
+            init_weights=1.0,
+            weight_jitter_sd=0.5
+        )
+        
+        # Store initial weights
+        initial_weights = model_with_jitter.log_weight.data.clone()
+        
+        # Fit should add jitter
+        model_with_jitter.fit(M, y, epochs=10, verbose=False)
+        
+        # Weights should have changed due to jitter (and training)
+        final_weights = model_with_jitter.log_weight.data
+        assert not torch.allclose(initial_weights, final_weights)
+        
+        # Model without jitter
+        torch.manual_seed(42)  # Reset seed
+        model_no_jitter = SparseCalibrationWeights(
+            n_features=N,
+            init_weights=1.0,
+            weight_jitter_sd=0.0  # No jitter
+        )
+        
+        initial_weights_no_jitter = model_no_jitter.log_weight.data.clone()
+        model_no_jitter.fit(M, y, epochs=1, verbose=False)  # Just 1 epoch
+        
+        # After 1 epoch, change should be small without jitter
+        weights_after_1_epoch = model_no_jitter.log_weight.data
+        # The change is due to gradient updates only
+        change = (weights_after_1_epoch - initial_weights_no_jitter).abs().max()
+        assert change < 1.0, "Without jitter, initial change should be small"
+
+    def test_init_keep_prob_options(self):
+        """Test init_keep_prob as scalar and array."""
+        n_features = 20
+        
+        # Test 1: Scalar init_keep_prob (existing behavior)
+        model_scalar = SparseCalibrationWeights(
+            n_features=n_features,
+            init_keep_prob=0.7,
+        )
+        # All log_alpha values should be similar (around log(0.7/0.3) plus small jitter)
+        expected_mu = np.log(0.7 / 0.3)
+        with torch.no_grad():
+            log_alphas = model_scalar.log_alpha.numpy()
+            # Check they're all close to expected value (within jitter range)
+            assert np.all(np.abs(log_alphas - expected_mu) < 0.1)
+        
+        # Test 2: Array init_keep_prob
+        keep_probs = np.linspace(0.1, 0.9, n_features)
+        model_array = SparseCalibrationWeights(
+            n_features=n_features,
+            init_keep_prob=keep_probs,
+        )
+        # Each log_alpha should correspond to its keep_prob
+        with torch.no_grad():
+            log_alphas = model_array.log_alpha.numpy()
+            expected_mus = np.log(keep_probs / (1 - keep_probs))
+            # Check each is close to its expected value
+            assert np.all(np.abs(log_alphas - expected_mus) < 0.1)
+        
+        # Test 3: Wrong shape should raise error
+        with pytest.raises(ValueError, match="must have shape"):
+            SparseCalibrationWeights(
+                n_features=10,
+                init_keep_prob=np.ones(5),  # Wrong size
+            )
+        
+        # Test 4: Edge case probabilities get clamped
+        extreme_probs = np.array([0.0, 0.5, 1.0])
+        model_extreme = SparseCalibrationWeights(
+            n_features=3,
+            init_keep_prob=extreme_probs,
+        )
+        with torch.no_grad():
+            log_alphas = model_extreme.log_alpha.numpy()
+            # Should not have inf or -inf values
+            assert np.all(np.isfinite(log_alphas))

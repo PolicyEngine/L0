@@ -30,13 +30,18 @@ class SparseCalibrationWeights(nn.Module):
         Lower bound of stretched concrete distribution
     zeta : float
         Upper bound of stretched concrete distribution
-    init_keep_prob : float
-        Initial probability of keeping each weight active
-    init_weight_scale : float
-        Initial scale for log weights (controls initial weight magnitude)
-    log_weight_jitter_sd : float
+    init_keep_prob : float or array-like
+        Initial probability of keeping each weight active.
+        If float, all weights use the same probability.
+        If array, must have shape (n_features,)
+    init_weights : float, array-like, or None
+        Initial weight values (on original scale, not log).
+        If float, all weights initialized to this value.
+        If array, must have shape (n_features,).
+        If None, defaults to 1.0 for all weights.
+    weight_jitter_sd : float
         Standard deviation of noise added to log weights at start of fit() to break symmetry.
-        Set to 0 to disable jitter. Default is 0.5 for backward compatibility.
+        Set to 0 to disable jitter. Default is 0.0 (no jitter).
     device : str or torch.device
         Device to run computations on ('cpu' or 'cuda')
     """
@@ -47,9 +52,9 @@ class SparseCalibrationWeights(nn.Module):
         beta: float = 2 / 3,
         gamma: float = -0.1,
         zeta: float = 1.1,
-        init_keep_prob: float = 0.5,
-        init_weight_scale: float = 1.0,
-        log_weight_jitter_sd: float = 0.5,
+        init_keep_prob: float | np.ndarray = 0.5,
+        init_weights: float | np.ndarray | None = None,
+        weight_jitter_sd: float = 0.0,
         device: str | torch.device = "cpu",
     ):
         super().__init__()
@@ -57,25 +62,58 @@ class SparseCalibrationWeights(nn.Module):
         self.beta = beta
         self.gamma = gamma
         self.zeta = zeta
-        self.log_weight_jitter_sd = log_weight_jitter_sd
+        self.weight_jitter_sd = weight_jitter_sd
         self.device = torch.device(device)
 
-        # Log weights to ensure positivity via exp transformation
-        self.log_weight = nn.Parameter(
-            torch.normal(
-                mean=0.0,
-                std=init_weight_scale,
-                size=(n_features,),
-                device=self.device,
+        # Initialize weights (on original scale)
+        if init_weights is None:
+            # Default: all weights start at 1.0
+            weight_values = torch.ones(n_features, device=self.device)
+        elif isinstance(init_weights, (int, float)):
+            # Scalar: all weights start at this value
+            weight_values = torch.full(
+                (n_features,), float(init_weights), device=self.device
             )
-        )
+        else:
+            # Array: use provided values
+            weight_values = torch.tensor(
+                init_weights, dtype=torch.float32, device=self.device
+            )
+            if weight_values.shape != (n_features,):
+                raise ValueError(
+                    f"init_weights array must have shape ({n_features},), "
+                    f"got {weight_values.shape}"
+                )
+        
+        # Convert to log space to ensure positivity via exp transformation
+        # Add small epsilon to avoid log(0)
+        self.log_weight = nn.Parameter(torch.log(weight_values + 1e-8))
 
         # L0 gate parameters
-        mu = torch.log(torch.tensor(init_keep_prob / (1 - init_keep_prob)))
-        self.log_alpha = nn.Parameter(
-            torch.normal(
-                mu.item(), 0.01, size=(n_features,), device=self.device
+        # Handle init_keep_prob as scalar or array
+        if isinstance(init_keep_prob, (int, float)):
+            # Scalar: broadcast to all features
+            keep_prob_values = torch.full(
+                (n_features,), float(init_keep_prob), device=self.device
             )
+        else:
+            # Array: use provided values
+            keep_prob_values = torch.tensor(
+                init_keep_prob, dtype=torch.float32, device=self.device
+            )
+            if keep_prob_values.shape != (n_features,):
+                raise ValueError(
+                    f"init_keep_prob array must have shape ({n_features},), "
+                    f"got {keep_prob_values.shape}"
+                )
+            # Clip to valid probability range to avoid log(0) or log(inf)
+            keep_prob_values = keep_prob_values.clamp(1e-6, 1 - 1e-6)
+        
+        # Convert probabilities to log_alpha
+        mu = torch.log(keep_prob_values / (1 - keep_prob_values))
+        # Add small jitter to break symmetry
+        self.log_alpha = nn.Parameter(
+            mu + torch.randn(n_features, device=self.device) * 0.01
         )
 
         # Cache for sparse tensor conversion
@@ -318,9 +356,9 @@ class SparseCalibrationWeights(nn.Module):
             group_weights = torch.ones_like(y)
 
         # Add jitter to weights to break symmetry (if jitter_sd > 0)
-        if self.log_weight_jitter_sd > 0:
+        if self.weight_jitter_sd > 0:
             with torch.no_grad():
-                jitter = torch.randn_like(self.log_weight) * self.log_weight_jitter_sd
+                jitter = torch.randn_like(self.log_weight) * self.weight_jitter_sd
                 self.log_weight.data += jitter
 
         # Setup optimizer
