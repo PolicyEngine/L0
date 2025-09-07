@@ -58,7 +58,7 @@ class TestSparseCalibrationWeights:
             zeta=1.1,
             init_keep_prob=0.3,
             init_weights=1.0,  # Start all weights at 1.0
-            weight_jitter_sd=0.5,  # Add jitter for symmetry breaking
+            log_weight_jitter_sd=0.5,  # Add jitter for symmetry breaking
         )
 
         model.fit(
@@ -465,7 +465,7 @@ class TestSparseCalibrationWeights:
         model_with_jitter = SparseCalibrationWeights(
             n_features=N, 
             init_weights=1.0,
-            weight_jitter_sd=0.5
+            log_weight_jitter_sd=0.5
         )
         
         # Store initial weights
@@ -483,7 +483,7 @@ class TestSparseCalibrationWeights:
         model_no_jitter = SparseCalibrationWeights(
             n_features=N,
             init_weights=1.0,
-            weight_jitter_sd=0.0  # No jitter
+            log_weight_jitter_sd=0.0  # No jitter
         )
         
         initial_weights_no_jitter = model_no_jitter.log_weight.data.clone()

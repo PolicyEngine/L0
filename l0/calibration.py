@@ -39,7 +39,7 @@ class SparseCalibrationWeights(nn.Module):
         If float, all weights initialized to this value.
         If array, must have shape (n_features,).
         If None, defaults to 1.0 for all weights.
-    weight_jitter_sd : float
+    log_weight_jitter_sd : float
         Standard deviation of noise added to log weights at start of fit() to break symmetry.
         Set to 0 to disable jitter. Default is 0.0 (no jitter).
     device : str or torch.device
@@ -54,7 +54,7 @@ class SparseCalibrationWeights(nn.Module):
         zeta: float = 1.1,
         init_keep_prob: float | np.ndarray = 0.5,
         init_weights: float | np.ndarray | None = None,
-        weight_jitter_sd: float = 0.0,
+        log_weight_jitter_sd: float = 0.0,
         device: str | torch.device = "cpu",
     ):
         super().__init__()
@@ -62,7 +62,7 @@ class SparseCalibrationWeights(nn.Module):
         self.beta = beta
         self.gamma = gamma
         self.zeta = zeta
-        self.weight_jitter_sd = weight_jitter_sd
+        self.log_weight_jitter_sd = log_weight_jitter_sd
         self.device = torch.device(device)
 
         # Initialize weights (on original scale)
@@ -356,9 +356,9 @@ class SparseCalibrationWeights(nn.Module):
             group_weights = torch.ones_like(y)
 
         # Add jitter to weights to break symmetry (if jitter_sd > 0)
-        if self.weight_jitter_sd > 0:
+        if self.log_weight_jitter_sd > 0:
             with torch.no_grad():
-                jitter = torch.randn_like(self.log_weight) * self.weight_jitter_sd
+                jitter = torch.randn_like(self.log_weight) * self.log_weight_jitter_sd
                 self.log_weight.data += jitter
 
         # Setup optimizer
