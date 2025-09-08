@@ -42,6 +42,9 @@ class SparseCalibrationWeights(nn.Module):
     log_weight_jitter_sd : float
         Standard deviation of noise added to log weights at start of fit() to break symmetry.
         Set to 0 to disable jitter. Default is 0.0 (no jitter).
+    log_alpha_jitter_sd : float
+        Standard deviation of noise added to log_alpha at initialization to break symmetry.
+        Set to 0 to disable jitter. Default is 0.01 (following Louizos et al.).
     device : str or torch.device
         Device to run computations on ('cpu' or 'cuda')
     """
@@ -55,6 +58,7 @@ class SparseCalibrationWeights(nn.Module):
         init_keep_prob: float | np.ndarray = 0.5,
         init_weights: float | np.ndarray | None = None,
         log_weight_jitter_sd: float = 0.0,
+        log_alpha_jitter_sd: float = 0.01,
         device: str | torch.device = "cpu",
     ):
         super().__init__()
@@ -63,6 +67,7 @@ class SparseCalibrationWeights(nn.Module):
         self.gamma = gamma
         self.zeta = zeta
         self.log_weight_jitter_sd = log_weight_jitter_sd
+        self.log_alpha_jitter_sd = log_alpha_jitter_sd
         self.device = torch.device(device)
 
         # Initialize weights (on original scale)
@@ -84,7 +89,7 @@ class SparseCalibrationWeights(nn.Module):
                     f"init_weights array must have shape ({n_features},), "
                     f"got {weight_values.shape}"
                 )
-        
+
         # Convert to log space to ensure positivity via exp transformation
         # Add small epsilon to avoid log(0)
         self.log_weight = nn.Parameter(torch.log(weight_values + 1e-8))
@@ -108,13 +113,18 @@ class SparseCalibrationWeights(nn.Module):
                 )
             # Clip to valid probability range to avoid log(0) or log(inf)
             keep_prob_values = keep_prob_values.clamp(1e-6, 1 - 1e-6)
-        
+
         # Convert probabilities to log_alpha
         mu = torch.log(keep_prob_values / (1 - keep_prob_values))
-        # Add small jitter to break symmetry
-        self.log_alpha = nn.Parameter(
-            mu + torch.randn(n_features, device=self.device) * 0.01
-        )
+        # Add jitter to break symmetry (if specified)
+        if self.log_alpha_jitter_sd > 0:
+            jitter = (
+                torch.randn(n_features, device=self.device)
+                * self.log_alpha_jitter_sd
+            )
+            self.log_alpha = nn.Parameter(mu + jitter)
+        else:
+            self.log_alpha = nn.Parameter(mu)
 
         # Cache for sparse tensor conversion
         self._cached_M_torch: torch.sparse.Tensor | None = None
@@ -358,7 +368,10 @@ class SparseCalibrationWeights(nn.Module):
         # Add jitter to weights to break symmetry (if jitter_sd > 0)
         if self.log_weight_jitter_sd > 0:
             with torch.no_grad():
-                jitter = torch.randn_like(self.log_weight) * self.log_weight_jitter_sd
+                jitter = (
+                    torch.randn_like(self.log_weight)
+                    * self.log_weight_jitter_sd
+                )
                 self.log_weight.data += jitter
 
         # Setup optimizer
