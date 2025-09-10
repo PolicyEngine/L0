@@ -50,3 +50,15 @@
     - Removed mypy type checking from CI/CD workflow to eliminate type annotation
       overhead
   date: 2025-09-05 13:33:54
+- bump: minor
+  changes:
+    added:
+    - Jitter parameter for improved numerical stability in calibration layers
+    - More flexible parameter initialization options for calibration
+    - Python 3.11 support (previously required 3.13)
+    changed:
+    - Enhanced argument handling in calibration module
+    - Improved parameter initialization defaults
+    fixed:
+    - Numerical stability issues in edge cases during calibration
+  date: 2025-09-10 03:01:41
