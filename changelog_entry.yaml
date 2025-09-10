@@ -1,4 +1,0 @@
-- bump: patch
-  changes:
-    fixed:
-    - Fixed CI build failure by adding jupyter-book to docs dependencies

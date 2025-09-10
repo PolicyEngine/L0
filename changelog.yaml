@@ -62,3 +62,8 @@
     fixed:
     - Numerical stability issues in edge cases during calibration
   date: 2025-09-10 03:01:41
+- bump: patch
+  changes:
+    fixed:
+    - Fixed CI build failure by adding jupyter-book to docs dependencies
+  date: 2025-09-10 03:17:25
