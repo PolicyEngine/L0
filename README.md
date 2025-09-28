@@ -2,6 +2,17 @@
 
 A PyTorch implementation of L0 regularization for neural network sparsification and intelligent sampling, based on [Louizos, Welling, & Kingma (2017)](https://arxiv.org/abs/1712.01312).
 
+This method is considered a more faithful interpretation of L0 regularization because it directly integrates a differentiable approximation of the L0 norm into the training objective, allowing the model to learn which weights should be zero as part of the optimization process. Simply setting small weights to zero is a post-training heuristic that is disconnected from the learning objective.
+
+This Paper's Approach (Principled Optimization) 🧠:
+
+The method creates a 
+
+- differentiable surrogate for the L0 norm. It achieves this by introducing stochastic gates that control whether a weight is active.
+- The objective function is modified to minimize both the task-specific error and the expected number of "on" gates.
+- By using a special "hard concrete" distribution, the gates can become exactly zero during training while still allowing gradients to flow.
+- This means the network actively learns a sparse structure that balances performance and complexity from the very beginning of training.
+
 ## Features
 
 - **Hard Concrete Distribution**: Differentiable approximation of L0 norm

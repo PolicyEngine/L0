@@ -444,9 +444,9 @@ class SparseCalibrationWeights(nn.Module):
                                 rel_errors[group_mask].mean().item()
                             )
                             group_losses.append(group_mean_err)
-                        mean_group_loss = np.mean(group_losses)
+                        mean_group_mare = np.mean(group_losses)
                     else:
-                        mean_group_loss = mean_rel_err
+                        mean_group_mare = mean_rel_err
 
                     # Calculate sparsity percentage
                     sparsity_pct = 100 * (
@@ -461,7 +461,7 @@ class SparseCalibrationWeights(nn.Module):
                     if target_groups is not None:
                         print(
                             f"Epoch {epoch+1:4d}: "
-                            f"mean_group_loss={mean_group_loss:.1%}, "
+                            f"mean_group_mare={mean_group_mare:.4%}, "
                             f"max_error={max_rel_err:.1%}, "
                             f"total_loss={actual_total_loss:.3f}, "
                             f"active={active_info['count']:4d}/{self.n_features} ({sparsity_pct:.1f}% sparse)"
@@ -469,7 +469,7 @@ class SparseCalibrationWeights(nn.Module):
                     else:
                         print(
                             f"Epoch {epoch+1:4d}: "
-                            f"mean_error={mean_rel_err:.1%}, "
+                            f"mean_error={mean_rel_err:.4%}, "
                             f"max_error={max_rel_err:.1%}, "
                             f"total_loss={actual_total_loss:.3f}, "
                             f"active={active_info['count']:4d}/{self.n_features} ({sparsity_pct:.1f}% sparse)"
