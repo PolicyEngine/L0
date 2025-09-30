@@ -459,6 +459,25 @@ class SparseCalibrationWeights(nn.Module):
                         1 - active_info["count"] / self.n_features
                     )
 
+                    # Weight distribution diagnostic
+                    if active_weights.numel() > 0:
+                        w_tiny = (active_weights < 0.01).sum().item()
+                        w_small = ((active_weights >= 0.01) & (active_weights < 0.1)).sum().item()
+                        w_med = ((active_weights >= 0.1) & (active_weights < 1.0)).sum().item()
+                        w_normal = ((active_weights >= 1.0) & (active_weights < 10.0)).sum().item()
+                        w_large = (active_weights >= 10.0).sum().item()
+                        
+                        total_active = active_weights.numel()
+                        weight_dist = (
+                            f"[<0.01: {100*w_tiny/total_active:.1f}%, "
+                            f"0.01-0.1: {100*w_small/total_active:.1f}%, "
+                            f"0.1-1: {100*w_med/total_active:.1f}%, "
+                            f"1-10: {100*w_normal/total_active:.1f}%, "
+                            f"≥10: {100*w_large/total_active:.1f}%]"
+                        )
+                    else:
+                        weight_dist = "[no active weights]"
+
                     # Calculate components of the actual loss being minimized
                     actual_data_loss = data_loss.item()
                     actual_l0_loss = l0_loss.item()
@@ -470,7 +489,8 @@ class SparseCalibrationWeights(nn.Module):
                             f"mean_group_mare={mean_group_mare:.4%}, "
                             f"max_error={max_rel_err:.1%}, "
                             f"total_loss={actual_total_loss:.3f}, "
-                            f"active={active_info['count']:4d}/{self.n_features} ({sparsity_pct:.1f}% sparse)"
+                            f"active={active_info['count']:4d}/{self.n_features} ({sparsity_pct:.1f}% sparse)\n"
+                            f"         Weight dist: {weight_dist}"
                         )
                     else:
                         print(
@@ -478,7 +498,8 @@ class SparseCalibrationWeights(nn.Module):
                             f"mean_error={mean_rel_err:.4%}, "
                             f"max_error={max_rel_err:.1%}, "
                             f"total_loss={actual_total_loss:.3f}, "
-                            f"active={active_info['count']:4d}/{self.n_features} ({sparsity_pct:.1f}% sparse)"
+                            f"active={active_info['count']:4d}/{self.n_features} ({sparsity_pct:.1f}% sparse)\n"
+                            f"         Weight dist: {weight_dist}"
                         )
 
         return self
