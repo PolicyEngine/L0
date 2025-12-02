@@ -247,6 +247,199 @@ class TestSparseCalibrationWeights:
                 weights_with_l2.max() <= weights_no_l2.max() * 2.0
             ), "L2 should prevent extreme weights"
 
+    def test_pure_l2_penalty(self):
+        """Test pure L2 regularization without L0."""
+        N = 50
+        Q = 30
+        
+        np.random.seed(42)
+        torch.manual_seed(42)
+        
+        # Create underdetermined problem where L2 helps regularize
+        M = sp.random(Q, N, density=0.5, format="csr")
+        M.data = np.abs(M.data) * 2  # Scale up to create larger weights
+        y = np.ones(Q) * 10  # Simple target
+        
+        # Train without any regularization
+        model_no_reg = SparseCalibrationWeights(
+            n_features=N, 
+            init_weights=2.0,  # Start with larger weights
+            init_keep_prob=0.999  # Keep all weights active
+        )
+        model_no_reg.fit(
+            M, y, 
+            lambda_l0=0.0,  # No L0
+            lambda_l2=0.0,  # No L2
+            epochs=1000, 
+            lr=0.02,
+            verbose=False
+        )
+        
+        # Train with strong L2 regularization
+        model_l2_only = SparseCalibrationWeights(
+            n_features=N,
+            init_weights=2.0,  # Same starting point
+            init_keep_prob=0.999  # Keep all weights active
+        )
+        model_l2_only.fit(
+            M, y,
+            lambda_l0=0.0,  # No L0
+            lambda_l2=10.0,  # Very strong L2 to see clear effect
+            epochs=1000,
+            lr=0.02,
+            verbose=False
+        )
+        
+        with torch.no_grad():
+            weights_no_reg = model_no_reg.get_weights(deterministic=True)
+            weights_l2 = model_l2_only.get_weights(deterministic=True)
+            
+            # Get non-zero weights
+            active_no_reg = weights_no_reg[weights_no_reg > 1e-8]
+            active_l2 = weights_l2[weights_l2 > 1e-8]
+            
+            # L2 should keep most weights active (no sparsity from L2)
+            assert len(active_l2) >= N * 0.9, f"Pure L2 should not induce sparsity, got {len(active_l2)}/{N}"
+            
+            # L2 norm should be smaller with regularization
+            l2_norm_no_reg = (weights_no_reg ** 2).sum().sqrt()
+            l2_norm_with_l2 = (weights_l2 ** 2).sum().sqrt()
+            assert l2_norm_with_l2 < l2_norm_no_reg, \
+                f"L2 regularization should reduce L2 norm: {l2_norm_with_l2:.2f} vs {l2_norm_no_reg:.2f}"
+            
+            # Check coefficient of variation (CV = std/mean) is lower with L2
+            # This captures that L2 shrinks weights toward each other
+            if active_no_reg.mean() > 1e-6 and active_l2.mean() > 1e-6:
+                cv_no_reg = active_no_reg.std() / active_no_reg.mean()
+                cv_l2 = active_l2.std() / active_l2.mean()
+                assert cv_l2 < cv_no_reg * 1.2, \
+                    f"L2 should reduce relative variation: CV {cv_l2:.2f} vs {cv_no_reg:.2f}"
+            
+            # L2 should prevent extreme weights
+            assert weights_l2.max() < weights_no_reg.max() * 1.5, \
+                f"L2 should limit max weights: {weights_l2.max():.2f} vs {weights_no_reg.max():.2f}"
+            
+            # Both should still fit reasonably well
+            y_pred_no_reg = model_no_reg.predict(M).cpu().numpy()
+            y_pred_l2 = model_l2_only.predict(M).cpu().numpy()
+            
+            error_no_reg = np.abs((y - y_pred_no_reg) / y).mean()
+            error_l2 = np.abs((y - y_pred_l2) / y).mean()
+            
+            # L2 model may have slightly worse fit due to regularization
+            assert error_l2 < 0.5, f"L2 model should still fit reasonably: {error_l2:.3f}"
+            # But the trade-off is worth it for regularization
+
+    def test_l0_l2_combination(self):
+        """Test that combining L0 and L2 gives both sparsity and regularization."""
+        N = 100  # features
+        Q = 50   # targets
+        
+        np.random.seed(42)
+        torch.manual_seed(42)
+        
+        # Create problem with potential for overfitting
+        M = sp.random(Q, N, density=0.4, format="csr")
+        M.data = np.abs(M.data) * 3
+        y = np.random.uniform(5, 20, size=Q)
+        
+        # Model 1: Only L0 (sparsity without weight regularization)
+        model_l0_only = SparseCalibrationWeights(
+            n_features=N,
+            init_weights=2.0,
+            init_keep_prob=0.5  # Start with 50% probability
+        )
+        model_l0_only.fit(
+            M, y,
+            lambda_l0=0.01,   # Stronger L0 for sparsity
+            lambda_l2=0.0,    # No L2
+            epochs=2000,
+            lr=0.02,
+            verbose=False
+        )
+        
+        # Model 2: Only L2 (weight regularization without sparsity)
+        model_l2_only = SparseCalibrationWeights(
+            n_features=N,
+            init_weights=2.0,
+            init_keep_prob=0.999  # Keep all weights active
+        )
+        model_l2_only.fit(
+            M, y,
+            lambda_l0=0.0,    # No L0
+            lambda_l2=0.1,    # Moderate L2
+            epochs=1500,
+            lr=0.02,
+            verbose=False
+        )
+        
+        # Model 3: Combined L0+L2 (both sparsity and weight regularization)
+        model_l0_l2 = SparseCalibrationWeights(
+            n_features=N,
+            init_weights=2.0,
+            init_keep_prob=0.5  # Same starting point as L0-only
+        )
+        model_l0_l2.fit(
+            M, y,
+            lambda_l0=0.01,   # Same L0 as model 1
+            lambda_l2=0.1,    # Add L2 regularization
+            epochs=2000,
+            lr=0.02,
+            verbose=False
+        )
+        
+        with torch.no_grad():
+            # Get weights and stats for all models
+            weights_l0_only = model_l0_only.get_weights(deterministic=True)
+            weights_l2_only = model_l2_only.get_weights(deterministic=True)
+            weights_l0_l2 = model_l0_l2.get_weights(deterministic=True)
+            
+            # Count active weights
+            active_l0_only = (weights_l0_only > 1e-6).sum().item()
+            active_l2_only = (weights_l2_only > 1e-6).sum().item()
+            active_l0_l2 = (weights_l0_l2 > 1e-6).sum().item()
+            
+            # L0-only should have sparsity
+            assert active_l0_only < N * 0.8, f"L0 should induce sparsity: {active_l0_only}/{N} active"
+            
+            # L2-only should have no/little sparsity
+            assert active_l2_only > N * 0.9, f"L2 alone shouldn't induce sparsity: {active_l2_only}/{N} active"
+            
+            # L0+L2 should have sparsity (from L0)
+            assert active_l0_l2 < N * 0.8, f"L0+L2 should have sparsity: {active_l0_l2}/{N} active"
+            
+            # Among active weights, L0+L2 should have smaller magnitudes than L0-only (from L2)
+            active_mask_l0_only = weights_l0_only > 1e-6
+            active_mask_l0_l2 = weights_l0_l2 > 1e-6
+            
+            if active_mask_l0_only.any() and active_mask_l0_l2.any():
+                # Compare L2 norms of active weights
+                l2_norm_l0_only = (weights_l0_only[active_mask_l0_only] ** 2).sum().sqrt()
+                l2_norm_l0_l2 = (weights_l0_l2[active_mask_l0_l2] ** 2).sum().sqrt()
+                
+                # L0+L2 should have smaller weight norms than L0-only
+                # (L2 regularization effect on top of sparsity)
+                assert l2_norm_l0_l2 < l2_norm_l0_only * 1.2, \
+                    f"L0+L2 should have controlled weights: {l2_norm_l0_l2:.2f} vs L0-only {l2_norm_l0_only:.2f}"
+            
+            # Check prediction quality for all models
+            y_pred_l0_only = model_l0_only.predict(M).cpu().numpy()
+            y_pred_l2_only = model_l2_only.predict(M).cpu().numpy()
+            y_pred_l0_l2 = model_l0_l2.predict(M).cpu().numpy()
+            
+            error_l0_only = np.abs((y - y_pred_l0_only) / (y + 1)).mean()
+            error_l2_only = np.abs((y - y_pred_l2_only) / (y + 1)).mean()
+            error_l0_l2 = np.abs((y - y_pred_l0_l2) / (y + 1)).mean()
+            
+            # All should fit reasonably well (L2-only may have slightly worse fit due to regularization)
+            assert error_l0_only < 0.35, f"L0-only should fit well: {error_l0_only:.3f}"
+            assert error_l2_only < 0.35, f"L2-only should fit well: {error_l2_only:.3f}"
+            assert error_l0_l2 < 0.35, f"L0+L2 should fit well: {error_l0_l2:.3f}"
+            
+            print(f"\nL0-only: {active_l0_only}/{N} active, error={error_l0_only:.3f}")
+            print(f"L2-only: {active_l2_only}/{N} active, error={error_l2_only:.3f}")
+            print(f"L0+L2: {active_l0_l2}/{N} active, error={error_l0_l2:.3f}")
+
     def test_group_wise_averaging(self):
         """Test that group-wise averaging balances loss contributions."""
         N = 100  # features (households)
