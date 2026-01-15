@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "l0-python"
-version = "0.4.1"
+version = "0.4.2"
 description = "L0 regularization for sparse neural networks and intelligent sampling"
 readme = "README.md"
 authors = [
