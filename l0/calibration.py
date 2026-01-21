@@ -463,17 +463,28 @@ class SparseCalibrationWeights(nn.Module):
                     if active_weights.numel() > 0:
                         w_tiny = (active_weights < 0.01).sum().item()
                         w_small = (
-                            (active_weights >= 0.01) & (active_weights < 0.1)
-                        ).sum().item()
+                            ((active_weights >= 0.01) & (active_weights < 0.1))
+                            .sum()
+                            .item()
+                        )
                         w_med = (
-                            (active_weights >= 0.1) & (active_weights < 1.0)
-                        ).sum().item()
+                            ((active_weights >= 0.1) & (active_weights < 1.0))
+                            .sum()
+                            .item()
+                        )
                         w_normal = (
-                            (active_weights >= 1.0) & (active_weights < 10.0)
-                        ).sum().item()
+                            ((active_weights >= 1.0) & (active_weights < 10.0))
+                            .sum()
+                            .item()
+                        )
                         w_large = (
-                            (active_weights >= 10.0) & (active_weights < 1000.0)
-                        ).sum().item()
+                            (
+                                (active_weights >= 10.0)
+                                & (active_weights < 1000.0)
+                            )
+                            .sum()
+                            .item()
+                        )
                         w_huge = (active_weights >= 1000.0).sum().item()
 
                         total_active = active_weights.numel()
