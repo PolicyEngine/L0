@@ -5,7 +5,7 @@ A PyTorch implementation of L0 regularization for neural network sparsification
 and intelligent sampling, based on Louizos, Welling, & Kingma (2017).
 """
 
-__version__ = "0.1.0"
+__version__ = "0.5.0"
 
 from .distributions import HardConcrete
 from .gates import FeatureGate, HybridGate, L0Gate, SampleGate
