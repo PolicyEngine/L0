@@ -1,5 +1,0 @@
-- bump: minor
-  changes:
-    added:
-    - Weight distribution diagnostics during training showing buckets (<0.01, 0.01-0.1, 0.1-1, 1-10, 10-1000, >1000)
-    - use_gates parameter to optionally disable L0 gates in SparseCalibrationWeights
