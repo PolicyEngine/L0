@@ -1,0 +1,6 @@
+- bump: minor
+  changes:
+    added:
+    - Per-group loss multipliers via group_multipliers parameter in SparseCalibrationWeights.fit()
+    - normalize_groups parameter to control within-group normalization independently of target_groups
+    - Verbose echo of group weighting config at start of fit()

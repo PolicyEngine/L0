@@ -310,6 +310,8 @@ class SparseCalibrationWeights(nn.Module):
         verbose: bool = False,
         verbose_freq: int = 100,
         target_groups: np.ndarray | None = None,
+        normalize_groups: bool = True,
+        group_multipliers: dict[int, float] | None = None,
     ) -> "SparseCalibrationWeights":
         """
         Fit calibration weights using gradient descent.
@@ -338,6 +340,12 @@ class SparseCalibrationWeights(nn.Module):
             Array of group IDs for each target. Targets in the same group
             will be averaged together so each group contributes equally to loss.
             If None, all targets are treated independently.
+        normalize_groups : bool
+            Whether to normalize within groups so each group contributes
+            equally to the loss. Default True (backward-compatible).
+        group_multipliers : dict[int, float], optional
+            Per-group loss scaling factors. Applied after normalization
+            (if enabled). Requires target_groups to be set.
 
         Returns
         -------
@@ -350,26 +358,52 @@ class SparseCalibrationWeights(nn.Module):
         # Convert M to torch sparse (will be cached)
         M_torch = self._convert_sparse_to_torch(M)
 
+        # Validate group_multipliers
+        if group_multipliers is not None and target_groups is None:
+            raise ValueError(
+                "group_multipliers requires target_groups to be set"
+            )
+
         # Compute group weights for loss averaging
         if target_groups is not None:
-            # Convert to tensor
             target_groups = torch.tensor(
                 target_groups, dtype=torch.long, device=self.device
             )
-
-            # Calculate group weights: 1 / group_size for each target
             unique_groups = torch.unique(target_groups)
-            group_weights = torch.zeros_like(y)
 
-            for group_id in unique_groups:
-                group_mask = target_groups == group_id
-                group_size = group_mask.sum().item()
-                # Each target in the group gets weight 1/group_size
-                # so the group's total contribution is 1
-                group_weights[group_mask] = 1.0 / group_size
+            if normalize_groups:
+                group_weights = torch.zeros_like(y)
+                for group_id in unique_groups:
+                    group_mask = target_groups == group_id
+                    group_size = group_mask.sum().item()
+                    group_weights[group_mask] = 1.0 / group_size
+            else:
+                group_weights = torch.ones_like(y)
+
+            if group_multipliers is not None:
+                for gid, mult in group_multipliers.items():
+                    group_mask = target_groups == gid
+                    if not group_mask.any():
+                        raise ValueError(
+                            f"group_multipliers key {gid} not found "
+                            f"in target_groups"
+                        )
+                    group_weights[group_mask] *= mult
         else:
-            # No grouping - all targets weighted equally
             group_weights = torch.ones_like(y)
+
+        if verbose:
+            if target_groups is not None:
+                n_groups = len(torch.unique(target_groups))
+                parts = [f"{n_groups} groups"]
+                parts.append(
+                    f"normalize={'on' if normalize_groups else 'off'}"
+                )
+                if group_multipliers is not None:
+                    parts.append(f"multipliers={group_multipliers}")
+                print(f"Groups: {', '.join(parts)}")
+            else:
+                print("Groups: none (uniform weights)")
 
         # Add jitter to weights to break symmetry (if jitter_sd > 0)
         if self.log_weight_jitter_sd > 0:
