@@ -74,3 +74,11 @@
       0.1-1, 1-10, 10-1000, >1000)
     - use_gates parameter to optionally disable L0 gates in SparseCalibrationWeights
   date: 2026-01-21 03:21:38
+- bump: minor
+  changes:
+    added:
+    - Per-group loss multipliers via group_multipliers parameter in SparseCalibrationWeights.fit()
+    - normalize_groups parameter to control within-group normalization independently
+      of target_groups
+    - Verbose echo of group weighting config at start of fit()
+  date: 2026-02-09 18:50:12
