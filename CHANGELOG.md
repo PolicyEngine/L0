@@ -1,3 +1,10 @@
+## [0.6.1] - 2026-02-25
+
+### Changed
+
+- Migrated from changelog_entry.yaml to towncrier fragments to eliminate merge conflicts.
+
+
 # Changelog
 
 All notable changes to this project will be documented in this file.
