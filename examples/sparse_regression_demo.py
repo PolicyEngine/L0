@@ -68,9 +68,7 @@ y = torch.tensor(y_np, dtype=torch.float32)
 
 # Initialize parameters
 b0_param = torch.tensor(y_np.mean(), dtype=torch.float32, requires_grad=True)
-b_param = torch.tensor(
-    0.1 * np.random.rand(p), dtype=torch.float32, requires_grad=True
-)
+b_param = torch.tensor(0.1 * np.random.rand(p), dtype=torch.float32, requires_grad=True)
 
 # L0 gate parameters
 keep_prob = 0.5
@@ -137,9 +135,7 @@ with torch.no_grad():
     print("Gate computation comparison (for learned log_alpha values):")
     print("-" * 60)
     print(f"log_alpha:                {log_alpha.numpy().round(3)}")
-    print(
-        f"sigmoid(log_alpha/beta):  {(log_alpha/beta).sigmoid().numpy().round(3)}"
-    )
+    print(f"sigmoid(log_alpha/beta):  {(log_alpha / beta).sigmoid().numpy().round(3)}")
     print(f"sigmoid(log_alpha):       {log_alpha.sigmoid().numpy().round(3)}")
     print("\nDividing by temperature (beta=2/3) amplifies the logit,")
     print("pushing sigmoid outputs closer to 0 or 1.")

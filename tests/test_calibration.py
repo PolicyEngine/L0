@@ -44,9 +44,7 @@ class TestSparseCalibrationWeights:
 
         w_true = np.zeros(N)
         active_indices = np.random.choice(N, size=N_active, replace=False)
-        w_true[active_indices] = np.random.lognormal(
-            mean=2.0, sigma=1.0, size=N_active
-        )
+        w_true[active_indices] = np.random.lognormal(mean=2.0, sigma=1.0, size=N_active)
 
         y = M @ w_true
 
@@ -74,9 +72,7 @@ class TestSparseCalibrationWeights:
 
         # Check sparsity is reasonable (between 30% and 70%)
         sparsity = model.get_sparsity()
-        assert (
-            0.3 <= sparsity <= 0.7
-        ), f"Sparsity {sparsity:.2%} not in expected range"
+        assert 0.3 <= sparsity <= 0.7, f"Sparsity {sparsity:.2%} not in expected range"
 
         # Check relative loss is low
         with torch.no_grad():
@@ -130,9 +126,9 @@ class TestSparseCalibrationWeights:
             rel_err_rel = np.mean(np.abs((y - y_pred_rel) / (y + 1)))
 
             # Relative loss should do better on relative error
-            assert (
-                rel_err_rel <= rel_err_mse * 1.5
-            ), f"Relative loss should handle scale better: {rel_err_rel:.4f} vs {rel_err_mse:.4f}"
+            assert rel_err_rel <= rel_err_mse * 1.5, (
+                f"Relative loss should handle scale better: {rel_err_rel:.4f} vs {rel_err_mse:.4f}"
+            )
 
     def test_sparsity_control(self):
         """Test that L0 penalty controls sparsity level."""
@@ -162,12 +158,12 @@ class TestSparseCalibrationWeights:
             sparsities.append(model.get_sparsity())
 
         # Higher penalty should give more sparsity
-        assert (
-            sparsities[0] < sparsities[1]
-        ), "Higher L0 penalty should increase sparsity"
-        assert (
-            sparsities[1] < sparsities[2]
-        ), "Higher L0 penalty should increase sparsity"
+        assert sparsities[0] < sparsities[1], (
+            "Higher L0 penalty should increase sparsity"
+        )
+        assert sparsities[1] < sparsities[2], (
+            "Higher L0 penalty should increase sparsity"
+        )
 
     def test_get_active_weights(self):
         """Test active weight extraction."""
@@ -243,9 +239,9 @@ class TestSparseCalibrationWeights:
             weights_with_l2 = model_with_l2.get_weights(deterministic=True)
 
             # L2 should reduce weight magnitudes
-            assert (
-                weights_with_l2.max() <= weights_no_l2.max() * 2.0
-            ), "L2 should prevent extreme weights"
+            assert weights_with_l2.max() <= weights_no_l2.max() * 2.0, (
+                "L2 should prevent extreme weights"
+            )
 
     def test_pure_l2_penalty(self):
         """Test pure L2 regularization without L0."""
@@ -301,30 +297,30 @@ class TestSparseCalibrationWeights:
             active_l2 = weights_l2[weights_l2 > 1e-8]
 
             # L2 should keep most weights active (no sparsity from L2)
-            assert (
-                len(active_l2) >= N * 0.9
-            ), f"Pure L2 should not induce sparsity, got {len(active_l2)}/{N}"
+            assert len(active_l2) >= N * 0.9, (
+                f"Pure L2 should not induce sparsity, got {len(active_l2)}/{N}"
+            )
 
             # L2 norm should be smaller with regularization
             l2_norm_no_reg = (weights_no_reg**2).sum().sqrt()
             l2_norm_with_l2 = (weights_l2**2).sum().sqrt()
-            assert (
-                l2_norm_with_l2 < l2_norm_no_reg
-            ), f"L2 regularization should reduce L2 norm: {l2_norm_with_l2:.2f} vs {l2_norm_no_reg:.2f}"
+            assert l2_norm_with_l2 < l2_norm_no_reg, (
+                f"L2 regularization should reduce L2 norm: {l2_norm_with_l2:.2f} vs {l2_norm_no_reg:.2f}"
+            )
 
             # Check coefficient of variation (CV = std/mean) is lower with L2
             # This captures that L2 shrinks weights toward each other
             if active_no_reg.mean() > 1e-6 and active_l2.mean() > 1e-6:
                 cv_no_reg = active_no_reg.std() / active_no_reg.mean()
                 cv_l2 = active_l2.std() / active_l2.mean()
-                assert (
-                    cv_l2 < cv_no_reg * 1.2
-                ), f"L2 should reduce relative variation: CV {cv_l2:.2f} vs {cv_no_reg:.2f}"
+                assert cv_l2 < cv_no_reg * 1.2, (
+                    f"L2 should reduce relative variation: CV {cv_l2:.2f} vs {cv_no_reg:.2f}"
+                )
 
             # L2 should prevent extreme weights
-            assert (
-                weights_l2.max() < weights_no_reg.max() * 1.5
-            ), f"L2 should limit max weights: {weights_l2.max():.2f} vs {weights_no_reg.max():.2f}"
+            assert weights_l2.max() < weights_no_reg.max() * 1.5, (
+                f"L2 should limit max weights: {weights_l2.max():.2f} vs {weights_no_reg.max():.2f}"
+            )
 
             # Both should still fit reasonably well
             y_pred_no_reg = model_no_reg.predict(M).cpu().numpy()
@@ -334,9 +330,9 @@ class TestSparseCalibrationWeights:
             error_l2 = np.abs((y - y_pred_l2) / y).mean()
 
             # L2 model may have slightly worse fit due to regularization
-            assert (
-                error_l2 < 0.5
-            ), f"L2 model should still fit reasonably: {error_l2:.3f}"
+            assert error_l2 < 0.5, (
+                f"L2 model should still fit reasonably: {error_l2:.3f}"
+            )
             # But the trade-off is worth it for regularization
 
     def test_l0_l2_combination(self):
@@ -412,19 +408,19 @@ class TestSparseCalibrationWeights:
             active_l0_l2 = (weights_l0_l2 > 1e-6).sum().item()
 
             # L0-only should have sparsity
-            assert (
-                active_l0_only < N * 0.8
-            ), f"L0 should induce sparsity: {active_l0_only}/{N} active"
+            assert active_l0_only < N * 0.8, (
+                f"L0 should induce sparsity: {active_l0_only}/{N} active"
+            )
 
             # L2-only should have no/little sparsity
-            assert (
-                active_l2_only > N * 0.9
-            ), f"L2 alone shouldn't induce sparsity: {active_l2_only}/{N} active"
+            assert active_l2_only > N * 0.9, (
+                f"L2 alone shouldn't induce sparsity: {active_l2_only}/{N} active"
+            )
 
             # L0+L2 should have sparsity (from L0)
-            assert (
-                active_l0_l2 < N * 0.8
-            ), f"L0+L2 should have sparsity: {active_l0_l2}/{N} active"
+            assert active_l0_l2 < N * 0.8, (
+                f"L0+L2 should have sparsity: {active_l0_l2}/{N} active"
+            )
 
             # Among active weights, L0+L2 should have smaller magnitudes than L0-only (from L2)
             active_mask_l0_only = weights_l0_only > 1e-6
@@ -435,15 +431,13 @@ class TestSparseCalibrationWeights:
                 l2_norm_l0_only = (
                     (weights_l0_only[active_mask_l0_only] ** 2).sum().sqrt()
                 )
-                l2_norm_l0_l2 = (
-                    (weights_l0_l2[active_mask_l0_l2] ** 2).sum().sqrt()
-                )
+                l2_norm_l0_l2 = (weights_l0_l2[active_mask_l0_l2] ** 2).sum().sqrt()
 
                 # L0+L2 should have smaller weight norms than L0-only
                 # (L2 regularization effect on top of sparsity)
-                assert (
-                    l2_norm_l0_l2 < l2_norm_l0_only * 1.2
-                ), f"L0+L2 should have controlled weights: {l2_norm_l0_l2:.2f} vs L0-only {l2_norm_l0_only:.2f}"
+                assert l2_norm_l0_l2 < l2_norm_l0_only * 1.2, (
+                    f"L0+L2 should have controlled weights: {l2_norm_l0_l2:.2f} vs L0-only {l2_norm_l0_only:.2f}"
+                )
 
             # Check prediction quality for all models
             y_pred_l0_only = model_l0_only.predict(M).cpu().numpy()
@@ -455,22 +449,12 @@ class TestSparseCalibrationWeights:
             error_l0_l2 = np.abs((y - y_pred_l0_l2) / (y + 1)).mean()
 
             # All should fit reasonably well (L2-only may have slightly worse fit due to regularization)
-            assert (
-                error_l0_only < 0.35
-            ), f"L0-only should fit well: {error_l0_only:.3f}"
-            assert (
-                error_l2_only < 0.35
-            ), f"L2-only should fit well: {error_l2_only:.3f}"
-            assert (
-                error_l0_l2 < 0.35
-            ), f"L0+L2 should fit well: {error_l0_l2:.3f}"
+            assert error_l0_only < 0.35, f"L0-only should fit well: {error_l0_only:.3f}"
+            assert error_l2_only < 0.35, f"L2-only should fit well: {error_l2_only:.3f}"
+            assert error_l0_l2 < 0.35, f"L0+L2 should fit well: {error_l0_l2:.3f}"
 
-            print(
-                f"\nL0-only: {active_l0_only}/{N} active, error={error_l0_only:.3f}"
-            )
-            print(
-                f"L2-only: {active_l2_only}/{N} active, error={error_l2_only:.3f}"
-            )
+            print(f"\nL0-only: {active_l0_only}/{N} active, error={error_l0_only:.3f}")
+            print(f"L2-only: {active_l2_only}/{N} active, error={error_l2_only:.3f}")
             print(f"L0+L2: {active_l0_l2}/{N} active, error={error_l0_l2:.3f}")
 
     def test_group_wise_averaging(self):
@@ -569,8 +553,7 @@ class TestSparseCalibrationWeights:
 
             # Errors should be within an order of magnitude of each other
             assert max_err < min_err * 10, (
-                f"Group errors should be balanced: "
-                f"min={min_err:.4f}, max={max_err:.4f}"
+                f"Group errors should be balanced: min={min_err:.4f}, max={max_err:.4f}"
             )
 
     def test_group_wise_averaging_edge_cases(self):
@@ -602,9 +585,9 @@ class TestSparseCalibrationWeights:
         with torch.no_grad():
             y_pred = model.predict(M).cpu().numpy()
             rel_err = np.mean(np.abs((y - y_pred) / (y + 1)))
-            assert (
-                rel_err < 0.5
-            ), f"Single group should still converge, got {rel_err:.4f}"
+            assert rel_err < 0.5, (
+                f"Single group should still converge, got {rel_err:.4f}"
+            )
 
         # Test 2: Each target in its own group (like all singletons)
         target_groups_all_singleton = np.arange(Q)
@@ -623,9 +606,9 @@ class TestSparseCalibrationWeights:
         with torch.no_grad():
             y_pred = model_new.predict(M).cpu().numpy()
             rel_err = np.mean(np.abs((y - y_pred) / (y + 1)))
-            assert (
-                rel_err < 0.5
-            ), f"All singleton groups should converge, got {rel_err:.4f}"
+            assert rel_err < 0.5, (
+                f"All singleton groups should converge, got {rel_err:.4f}"
+            )
 
         # Test 3: Unbalanced groups (1 huge group, several small)
         target_groups_unbalanced = np.array([0] * 7 + [1, 2, 3])
@@ -645,9 +628,9 @@ class TestSparseCalibrationWeights:
             y_pred = model_unbalanced.predict(M).cpu().numpy()
             # Check that small groups aren't ignored
             small_group_errors = np.abs((y[7:] - y_pred[7:]) / (y[7:] + 1))
-            assert (
-                np.mean(small_group_errors) < 0.5
-            ), "Small groups should not be ignored"
+            assert np.mean(small_group_errors) < 0.5, (
+                "Small groups should not be ignored"
+            )
 
     def test_init_weights_options(self):
         """Test different weight initialization options."""
@@ -667,9 +650,7 @@ class TestSparseCalibrationWeights:
 
         # Test 3: Array initialization
         init_array = np.random.uniform(0.5, 2.0, size=N)
-        model_array = SparseCalibrationWeights(
-            n_features=N, init_weights=init_array
-        )
+        model_array = SparseCalibrationWeights(n_features=N, init_weights=init_array)
         with torch.no_grad():
             weights = torch.exp(model_array.log_weight).cpu().numpy()
             np.testing.assert_allclose(weights, init_array, rtol=1e-5)
@@ -718,9 +699,7 @@ class TestSparseCalibrationWeights:
         # After 1 epoch, change should be small without jitter
         weights_after_1_epoch = model_no_jitter.log_weight.data
         # The change is due to gradient updates only
-        change = (
-            (weights_after_1_epoch - initial_weights_no_jitter).abs().max()
-        )
+        change = (weights_after_1_epoch - initial_weights_no_jitter).abs().max()
         assert change < 1.0, "Without jitter, initial change should be small"
 
     def test_init_keep_prob_options(self):
@@ -820,12 +799,8 @@ class TestSparseCalibrationWeights:
             y_pred_mult = model_mult.predict(M).cpu().numpy()
 
             # Singleton relative errors
-            sing_err_base = np.abs(
-                (y[:3] - y_pred_base[:3]) / (y[:3] + 1)
-            ).mean()
-            sing_err_mult = np.abs(
-                (y[:3] - y_pred_mult[:3]) / (y[:3] + 1)
-            ).mean()
+            sing_err_base = np.abs((y[:3] - y_pred_base[:3]) / (y[:3] + 1)).mean()
+            sing_err_mult = np.abs((y[:3] - y_pred_mult[:3]) / (y[:3] + 1)).mean()
 
             assert sing_err_mult < sing_err_base * 1.1, (
                 f"10x multiplier should improve singleton fit: "
@@ -882,12 +857,8 @@ class TestSparseCalibrationWeights:
             y_pred_mult = model_norm_mult.predict(M).cpu().numpy()
 
             # Group 3 error should improve with multiplier
-            g3_err_norm = np.abs(
-                (y[3:21] - y_pred_norm[3:21]) / (y[3:21] + 1)
-            ).mean()
-            g3_err_mult = np.abs(
-                (y[3:21] - y_pred_mult[3:21]) / (y[3:21] + 1)
-            ).mean()
+            g3_err_norm = np.abs((y[3:21] - y_pred_norm[3:21]) / (y[3:21] + 1)).mean()
+            g3_err_mult = np.abs((y[3:21] - y_pred_mult[3:21]) / (y[3:21] + 1)).mean()
 
             assert g3_err_mult < g3_err_norm * 1.1, (
                 f"5x multiplier should improve group 3 fit: "

@@ -191,9 +191,7 @@ class TestL0Conv2d:
         """Test depthwise convolution with L0."""
         from l0.layers import L0DepthwiseConv2d
 
-        conv = L0DepthwiseConv2d(
-            in_channels=32, kernel_size=3, init_sparsity=0.7
-        )
+        conv = L0DepthwiseConv2d(in_channels=32, kernel_size=3, init_sparsity=0.7)
 
         x = torch.randn(4, 32, 16, 16)
         output = conv(x)
@@ -237,9 +235,7 @@ class TestSparseMLP:
             if hasattr(module, "get_l0_penalty"):
                 expected += module.get_l0_penalty().item()
 
-        assert (
-            abs(l0_loss.item() - expected) < 0.1
-        )  # Allow small numerical difference
+        assert abs(l0_loss.item() - expected) < 0.1  # Allow small numerical difference
 
     def test_sparsity_stats(self, model):
         """Test getting sparsity statistics."""

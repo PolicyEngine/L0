@@ -107,9 +107,7 @@ def get_sparsity_stats(model: nn.Module) -> dict[str, dict[str, Any]]:
     stats = {}
 
     for name, module in model.named_modules():
-        if hasattr(module, "get_sparsity") and hasattr(
-            module, "get_l0_penalty"
-        ):
+        if hasattr(module, "get_sparsity") and hasattr(module, "get_l0_penalty"):
             active_params = module.get_l0_penalty().item()
 
             # Calculate total parameters
@@ -204,16 +202,12 @@ class TemperatureScheduler:
         progress = epoch / self.anneal_epochs
 
         if self.schedule == "linear":
-            temp = (
-                self.initial_temp
-                - (self.initial_temp - self.final_temp) * progress
-            )
+            temp = self.initial_temp - (self.initial_temp - self.final_temp) * progress
 
         elif self.schedule == "exponential":
             log_temp = (
                 np.log(self.initial_temp)
-                - (np.log(self.initial_temp) - np.log(self.final_temp))
-                * progress
+                - (np.log(self.initial_temp) - np.log(self.final_temp)) * progress
             )
             temp = np.exp(log_temp)
 

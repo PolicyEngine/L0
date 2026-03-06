@@ -35,9 +35,7 @@ class TestSparseL0Linear:
         num_nonzero = int(p * (1 - beta_sparsity))
         nonzero_indices = np.random.choice(p, num_nonzero, replace=False)
         b = np.zeros(p)
-        b[nonzero_indices] = np.random.choice(
-            [-3, -2, -1, 1, 2, 3], num_nonzero
-        )
+        b[nonzero_indices] = np.random.choice([-3, -2, -1, 1, 2, 3], num_nonzero)
 
         # Generate sparse X matrix
         X_dense = np.random.randn(n, p) * 0.5
@@ -66,9 +64,7 @@ class TestSparseL0Linear:
         lambda_reg = 0.01 * sigma2_hat
 
         # Fit our sparse L0 model
-        model = SparseL0Linear(
-            n_features=p, fit_intercept=True, init_keep_prob=0.5
-        )
+        model = SparseL0Linear(n_features=p, fit_intercept=True, init_keep_prob=0.5)
 
         model.fit(
             X_sparse,
@@ -85,9 +81,7 @@ class TestSparseL0Linear:
 
         # We expect to recover at least 60% of true features
         recall = (
-            true_positives / len(nonzero_indices)
-            if len(nonzero_indices) > 0
-            else 0
+            true_positives / len(nonzero_indices) if len(nonzero_indices) > 0 else 0
         )
         assert recall >= 0.6, f"Recall {recall:.2%} is too low"
 
@@ -125,21 +119,17 @@ class TestSparseL0Linear:
         y = X_sparse @ b + 0.1 * np.random.randn(n)
 
         # Fit model without intercept
-        model = SparseL0Linear(
-            n_features=p, fit_intercept=False, init_keep_prob=0.5
-        )
+        model = SparseL0Linear(n_features=p, fit_intercept=False, init_keep_prob=0.5)
 
-        assert (
-            model.bias is None
-        ), "Bias should be None when fit_intercept=False"
+        assert model.bias is None, "Bias should be None when fit_intercept=False"
 
         model.fit(X_sparse, y, epochs=500, verbose=False)
 
         # Check that we find the right features
         selected = model.get_selected_features().cpu().numpy()
-        assert (
-            0 in selected or 1 in selected or 2 in selected
-        ), "Should select at least one true feature"
+        assert 0 in selected or 1 in selected or 2 in selected, (
+            "Should select at least one true feature"
+        )
 
         # Make predictions
         y_pred = model.predict(X_sparse)
@@ -169,12 +159,8 @@ class TestSparseL0Linear:
         model.fit(X_sparse, y, epochs=100, verbose=False)
 
         # Check that cached tensor is sparse
-        assert (
-            model._cached_X_torch is not None
-        ), "Should cache the sparse tensor"
-        assert (
-            model._cached_X_torch.is_sparse
-        ), "Cached tensor should be sparse"
+        assert model._cached_X_torch is not None, "Should cache the sparse tensor"
+        assert model._cached_X_torch.is_sparse, "Cached tensor should be sparse"
 
         # Multiple predictions should reuse cached tensor
         y_pred1 = model.predict(X_sparse)
@@ -235,6 +221,6 @@ class TestSparseL0Linear:
             y_stoch1 = model.forward(X_torch, deterministic=False)
             y_stoch2 = model.forward(X_torch, deterministic=False)
 
-        assert not torch.allclose(
-            y_stoch1, y_stoch2
-        ), "Stochastic predictions should differ"
+        assert not torch.allclose(y_stoch1, y_stoch2), (
+            "Stochastic predictions should differ"
+        )

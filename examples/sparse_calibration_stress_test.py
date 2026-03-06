@@ -29,9 +29,7 @@ M = sp.csr_matrix(M_dense)
 # Create sparse true weights
 w_true = np.zeros(N)
 active_indices = np.random.choice(N, size=N_active, replace=False)
-w_true[active_indices] = np.random.lognormal(
-    mean=2.0, sigma=1.0, size=N_active
-)
+w_true[active_indices] = np.random.lognormal(mean=2.0, sigma=1.0, size=N_active)
 
 # Target vector y
 y = M @ w_true
@@ -39,7 +37,7 @@ y = M @ w_true
 # Checks to make sure we really have this level of sparsity:
 print(f"non-zeros elements in M: {M.nnz:,} ({M.nnz / (Q * N) * 100:.1f}%)")
 print(
-    f"non-zeros elements in w_true: {np.count_nonzero(w_true)} ({ np.count_nonzero(w_true) / N * 100:.1f}%)"
+    f"non-zeros elements in w_true: {np.count_nonzero(w_true)} ({np.count_nonzero(w_true) / N * 100:.1f}%)"
 )
 
 model = SparseCalibrationWeights(
@@ -75,9 +73,7 @@ with torch.no_grad():
     assert np.all(final_weights >= 0), "Weights should be non-negative!"
 
     active_weights = final_weights[final_weights > 1e-6]
-    print(
-        f"Final Sparsity (% zero): {100 - len(active_weights) / N * 100:.1f}%"
-    )
+    print(f"Final Sparsity (% zero): {100 - len(active_weights) / N * 100:.1f}%")
     if len(active_weights) > 0:
         print(f"\nActive weight statistics:")
         print(f"  Min: {active_weights.min():.4f}")

@@ -222,9 +222,7 @@ class L0Conv2d(nn.Module):
             gates = gates.view(self.weight.shape)
             masked_weight = self.weight * gates
 
-        return F.conv2d(
-            input, masked_weight, self.bias, self.stride, self.padding
-        )
+        return F.conv2d(input, masked_weight, self.bias, self.stride, self.padding)
 
     def get_l0_penalty(self) -> torch.Tensor:
         """Get L0 penalty."""
@@ -398,9 +396,7 @@ class SparseMLP(nn.Module):
         """Get sparsity statistics for all layers."""
         stats = {}
         for name, module in self.named_modules():
-            if hasattr(module, "get_sparsity") and hasattr(
-                module, "get_l0_penalty"
-            ):
+            if hasattr(module, "get_sparsity") and hasattr(module, "get_l0_penalty"):
                 stats[name] = {
                     "sparsity": module.get_sparsity(),
                     "active_params": module.get_l0_penalty().item(),

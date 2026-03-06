@@ -7,7 +7,7 @@ help:
 	@echo "  make install      Install package in editable mode"
 	@echo "  make install-dev  Install with development dependencies"
 	@echo "  make test         Run tests with coverage"
-	@echo "  make format       Format code with black"
+	@echo "  make format       Format code with ruff"
 	@echo "  make type-check   Run mypy type checker"
 	@echo "  make changelog    Update changelog and version"
 	@echo "  make clean        Remove build artifacts"
@@ -26,7 +26,7 @@ test:
 	pytest tests/ -v --cov=l0 --cov-report=term-missing
 
 format:
-	black . -l 79
+	ruff format .
 
 type-check:
 	mypy l0 --ignore-missing-imports
