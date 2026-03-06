@@ -130,9 +130,7 @@ class SampleGate(L0Gate):
         self.n_samples = n_samples
         self.target_samples = target_samples
 
-    def select_samples(
-        self, data: torch.Tensor
-    ) -> tuple[torch.Tensor, torch.Tensor]:
+    def select_samples(self, data: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         """
         Select samples from data.
 
@@ -219,9 +217,7 @@ class FeatureGate(L0Gate):
         self.n_features = n_features
         self.max_features = max_features
 
-    def select_features(
-        self, data: torch.Tensor
-    ) -> tuple[torch.Tensor, torch.Tensor]:
+    def select_features(self, data: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         """
         Select features from data.
 
@@ -377,9 +373,7 @@ class HybridGate(nn.Module):
 
         # Track selection type
         # Create initial selection type array
-        _ = np.array(
-            ["l0"] * len(l0_indices) + ["random"] * len(random_indices)
-        )
+        _ = np.array(["l0"] * len(l0_indices) + ["random"] * len(random_indices))
 
         # Reorder selection_type to match sorted indices
         _ = torch.cat(

@@ -121,8 +121,7 @@ class SparseCalibrationWeights(nn.Module):
         # Add jitter to break symmetry (if specified)
         if self.log_alpha_jitter_sd > 0:
             jitter = (
-                torch.randn(n_features, device=self.device)
-                * self.log_alpha_jitter_sd
+                torch.randn(n_features, device=self.device) * self.log_alpha_jitter_sd
             )
             self.log_alpha = nn.Parameter(mu + jitter)
         else:
@@ -132,9 +131,7 @@ class SparseCalibrationWeights(nn.Module):
         self._cached_M_torch: torch.sparse.Tensor | None = None
         self._cached_M_shape: tuple[int, int] | None = None
 
-    def _convert_sparse_to_torch(
-        self, M_sparse: sp.spmatrix
-    ) -> torch.sparse.Tensor:
+    def _convert_sparse_to_torch(self, M_sparse: sp.spmatrix) -> torch.sparse.Tensor:
         """
         Convert scipy sparse matrix to torch sparse tensor.
 
@@ -148,9 +145,7 @@ class SparseCalibrationWeights(nn.Module):
             return self._cached_M_torch
 
         M_coo = M_sparse.tocoo()
-        indices = torch.LongTensor(np.vstack([M_coo.row, M_coo.col])).to(
-            self.device
-        )
+        indices = torch.LongTensor(np.vstack([M_coo.row, M_coo.col])).to(self.device)
         values = torch.FloatTensor(M_coo.data).to(self.device)
         M_torch = torch.sparse_coo_tensor(
             indices,
@@ -360,9 +355,7 @@ class SparseCalibrationWeights(nn.Module):
 
         # Validate group_multipliers
         if group_multipliers is not None and target_groups is None:
-            raise ValueError(
-                "group_multipliers requires target_groups to be set"
-            )
+            raise ValueError("group_multipliers requires target_groups to be set")
 
         # Compute group weights for loss averaging
         if target_groups is not None:
@@ -385,8 +378,7 @@ class SparseCalibrationWeights(nn.Module):
                     group_mask = target_groups == gid
                     if not group_mask.any():
                         raise ValueError(
-                            f"group_multipliers key {gid} not found "
-                            f"in target_groups"
+                            f"group_multipliers key {gid} not found in target_groups"
                         )
                     group_weights[group_mask] *= mult
         else:
@@ -396,9 +388,7 @@ class SparseCalibrationWeights(nn.Module):
             if target_groups is not None:
                 n_groups = len(torch.unique(target_groups))
                 parts = [f"{n_groups} groups"]
-                parts.append(
-                    f"normalize={'on' if normalize_groups else 'off'}"
-                )
+                parts.append(f"normalize={'on' if normalize_groups else 'off'}")
                 if group_multipliers is not None:
                     parts.append(f"multipliers={group_multipliers}")
                 print(f"Groups: {', '.join(parts)}")
@@ -408,10 +398,7 @@ class SparseCalibrationWeights(nn.Module):
         # Add jitter to weights to break symmetry (if jitter_sd > 0)
         if self.log_weight_jitter_sd > 0:
             with torch.no_grad():
-                jitter = (
-                    torch.randn_like(self.log_weight)
-                    * self.log_weight_jitter_sd
-                )
+                jitter = torch.randn_like(self.log_weight) * self.log_weight_jitter_sd
                 self.log_weight.data += jitter
 
         # Setup optimizer
@@ -428,9 +415,7 @@ class SparseCalibrationWeights(nn.Module):
                 # Adding 1 to avoid division by zero
                 relative_errors = (y - y_pred) / (y + 1)
                 # Apply group weights and then average
-                weighted_squared_errors = (
-                    relative_errors.pow(2) * group_weights
-                )
+                weighted_squared_errors = relative_errors.pow(2) * group_weights
                 data_loss = (
                     weighted_squared_errors.sum()
                 )  # Sum because weights already normalize
@@ -480,18 +465,14 @@ class SparseCalibrationWeights(nn.Module):
                         group_losses = []
                         for group_id in torch.unique(target_groups):
                             group_mask = target_groups == group_id
-                            group_mean_err = (
-                                rel_errors[group_mask].mean().item()
-                            )
+                            group_mean_err = rel_errors[group_mask].mean().item()
                             group_losses.append(group_mean_err)
                         mean_group_mare = np.mean(group_losses)
                     else:
                         mean_group_mare = mean_rel_err
 
                     # Calculate sparsity percentage
-                    sparsity_pct = 100 * (
-                        1 - active_info["count"] / self.n_features
-                    )
+                    sparsity_pct = 100 * (1 - active_info["count"] / self.n_features)
 
                     # Weight distribution diagnostic
                     if active_weights.numel() > 0:
@@ -512,10 +493,7 @@ class SparseCalibrationWeights(nn.Module):
                             .item()
                         )
                         w_large = (
-                            (
-                                (active_weights >= 10.0)
-                                & (active_weights < 1000.0)
-                            )
+                            ((active_weights >= 10.0) & (active_weights < 1000.0))
                             .sum()
                             .item()
                         )
@@ -523,12 +501,12 @@ class SparseCalibrationWeights(nn.Module):
 
                         total_active = active_weights.numel()
                         weight_dist = (
-                            f"[<0.01: {100*w_tiny/total_active:.1f}%, "
-                            f"0.01-0.1: {100*w_small/total_active:.1f}%, "
-                            f"0.1-1: {100*w_med/total_active:.1f}%, "
-                            f"1-10: {100*w_normal/total_active:.1f}%, "
-                            f"10-1000: {100*w_large/total_active:.1f}%, "
-                            f">1000: {100*w_huge/total_active:.1f}%]"
+                            f"[<0.01: {100 * w_tiny / total_active:.1f}%, "
+                            f"0.01-0.1: {100 * w_small / total_active:.1f}%, "
+                            f"0.1-1: {100 * w_med / total_active:.1f}%, "
+                            f"1-10: {100 * w_normal / total_active:.1f}%, "
+                            f"10-1000: {100 * w_large / total_active:.1f}%, "
+                            f">1000: {100 * w_huge / total_active:.1f}%]"
                         )
                     else:
                         weight_dist = "[no active weights]"
@@ -540,7 +518,7 @@ class SparseCalibrationWeights(nn.Module):
 
                     if target_groups is not None:
                         print(
-                            f"Epoch {epoch+1:4d}: "
+                            f"Epoch {epoch + 1:4d}: "
                             f"mean_group_mare={mean_group_mare:.4%}, "
                             f"max_error={max_rel_err:.1%}, "
                             f"total_loss={actual_total_loss:.3f}, "
@@ -549,7 +527,7 @@ class SparseCalibrationWeights(nn.Module):
                         )
                     else:
                         print(
-                            f"Epoch {epoch+1:4d}: "
+                            f"Epoch {epoch + 1:4d}: "
                             f"mean_error={mean_rel_err:.4%}, "
                             f"max_error={max_rel_err:.1%}, "
                             f"total_loss={actual_total_loss:.3f}, "

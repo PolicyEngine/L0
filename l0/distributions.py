@@ -69,9 +69,7 @@ class HardConcrete(nn.Module):
             init_val = math.log(self.init_mean / (1 - self.init_mean))
             self.qz_logits.data.fill_(init_val)
 
-    def forward(
-        self, input_shape: tuple[int, ...] | None = None
-    ) -> torch.Tensor:
+    def forward(self, input_shape: tuple[int, ...] | None = None) -> torch.Tensor:
         """
         Sample or compute gates.
 

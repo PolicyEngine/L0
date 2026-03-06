@@ -42,9 +42,7 @@ class TestPenalties:
         expected += simple_model.fc1.get_l0_penalty().item()
         expected += simple_model.fc2.get_l0_penalty().item()
 
-        assert (
-            abs(penalty.item() - expected) < 0.1
-        )  # Allow small numerical difference
+        assert abs(penalty.item() - expected) < 0.1  # Allow small numerical difference
 
     def test_compute_l2_penalty(self, simple_model):
         """Test computing L2 penalty."""
@@ -63,9 +61,7 @@ class TestPenalties:
 
         # L2 penalty computation may have larger differences due to weight initialization
         # Allow for reasonable tolerance based on weight magnitudes
-        relative_diff = abs(penalty.item() - expected) / max(
-            penalty.item(), expected
-        )
+        relative_diff = abs(penalty.item() - expected) / max(penalty.item(), expected)
         assert (
             relative_diff < 0.75
         )  # Allow up to 75% relative difference due to init variance
@@ -78,9 +74,7 @@ class TestPenalties:
             compute_l2_penalty,
         )
 
-        penalty = compute_l0l2_penalty(
-            simple_model, l0_lambda=1e-3, l2_lambda=1e-4
-        )
+        penalty = compute_l0l2_penalty(simple_model, l0_lambda=1e-3, l2_lambda=1e-4)
 
         assert penalty.shape == ()
         assert penalty.item() > 0

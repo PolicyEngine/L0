@@ -7,7 +7,6 @@ sparse input matrices without converting them to dense format.
 
 # ruff: noqa: N803 N806
 
-
 import numpy as np
 import torch
 import torch.nn as nn
@@ -67,18 +66,14 @@ class SparseL0Linear(nn.Module):
         # L0 gate parameters
         mu = torch.log(torch.tensor(init_keep_prob / (1 - init_keep_prob)))
         self.log_alpha = nn.Parameter(
-            torch.normal(
-                mu.item(), 0.01, size=(n_features,), device=self.device
-            )
+            torch.normal(mu.item(), 0.01, size=(n_features,), device=self.device)
         )
 
         # Cache for sparse tensor conversion
         self._cached_X_torch: torch.sparse.Tensor | None = None
         self._cached_X_shape: tuple[int, int] | None = None
 
-    def _convert_sparse_to_torch(
-        self, X_sparse: sp.spmatrix
-    ) -> torch.sparse.Tensor:
+    def _convert_sparse_to_torch(self, X_sparse: sp.spmatrix) -> torch.sparse.Tensor:
         """
         Convert scipy sparse matrix to torch sparse tensor.
 
@@ -92,9 +87,7 @@ class SparseL0Linear(nn.Module):
             return self._cached_X_torch
 
         X_coo = X_sparse.tocoo()
-        indices = torch.LongTensor(np.vstack([X_coo.row, X_coo.col])).to(
-            self.device
-        )
+        indices = torch.LongTensor(np.vstack([X_coo.row, X_coo.col])).to(self.device)
         values = torch.FloatTensor(X_coo.data).to(self.device)
         X_torch = torch.sparse_coo_tensor(
             indices,
@@ -291,7 +284,7 @@ class SparseL0Linear(nn.Module):
                 with torch.no_grad():
                     n_active = (self.get_deterministic_gates() > 0.01).sum()
                     print(
-                        f"Epoch {epoch+1:4d}: "
+                        f"Epoch {epoch + 1:4d}: "
                         f"loss={loss.item():.4f}, "
                         f"mse={mse_loss.item():.4f}, "
                         f"l0={l0_loss.item():.2f}, "
@@ -300,9 +293,7 @@ class SparseL0Linear(nn.Module):
 
         return self
 
-    def predict(
-        self, X_sparse: sp.spmatrix | torch.sparse.Tensor
-    ) -> torch.Tensor:
+    def predict(self, X_sparse: sp.spmatrix | torch.sparse.Tensor) -> torch.Tensor:
         """
         Make predictions on new data.
 

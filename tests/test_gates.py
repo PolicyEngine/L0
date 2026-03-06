@@ -86,8 +86,8 @@ class TestSampleGate:
         weights = torch.rand(1000)
 
         sample_gate.eval()
-        selected_data, selected_weights, indices = (
-            sample_gate.select_weighted_samples(data, weights)
+        selected_data, selected_weights, indices = sample_gate.select_weighted_samples(
+            data, weights
         )
 
         assert selected_data.shape[0] == len(selected_weights)
@@ -162,8 +162,8 @@ class TestFeatureGate:
         feature_names = [f"feature_{i}" for i in range(100)]
 
         feature_gate.eval()
-        selected_data, selected_names = (
-            feature_gate.select_features_with_names(data, feature_names)
+        selected_data, selected_names = feature_gate.select_features_with_names(
+            data, feature_names
         )
 
         assert selected_data.shape[1] == len(selected_names)
