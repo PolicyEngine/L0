@@ -180,18 +180,26 @@ class SparseCalibrationWeights(nn.Module):
 
         return M_torch
 
+    # Bounds for `log_alpha` before scaling by `beta`. Values outside
+    # ``[-LOG_ALPHA_BOUND, LOG_ALPHA_BOUND]`` saturate the sigmoid and
+    # vanish gradients; clamping keeps sampling and deterministic gates
+    # well-defined under fp16/bf16.
+    LOG_ALPHA_BOUND: float = 20.0
+
     def _sample_gates(self) -> torch.Tensor:
         """Sample gates using Hard Concrete distribution."""
         eps = 1e-6
-        u = torch.rand_like(self.log_alpha).clamp(eps, 1 - eps)
-        s = (torch.log(u) - torch.log(1 - u) + self.log_alpha) / self.beta
+        log_alpha = self.log_alpha.clamp(-self.LOG_ALPHA_BOUND, self.LOG_ALPHA_BOUND)
+        u = torch.rand_like(log_alpha).clamp(eps, 1 - eps)
+        s = (torch.log(u) - torch.log(1 - u) + log_alpha) / self.beta
         s = torch.sigmoid(s)
         s_bar = s * (self.zeta - self.gamma) + self.gamma
         return s_bar.clamp(0, 1)
 
     def get_deterministic_gates(self) -> torch.Tensor:
         """Get deterministic gate values (for inference)."""
-        s = torch.sigmoid(self.log_alpha / self.beta)
+        log_alpha = self.log_alpha.clamp(-self.LOG_ALPHA_BOUND, self.LOG_ALPHA_BOUND)
+        s = torch.sigmoid(log_alpha / self.beta)
         s_bar = s * (self.zeta - self.gamma) + self.gamma
         return s_bar.clamp(0, 1)
 
@@ -263,7 +271,8 @@ class SparseCalibrationWeights(nn.Module):
         c = -self.beta * torch.log(
             torch.tensor(-self.gamma / self.zeta, device=self.device)
         )
-        pi = torch.sigmoid(self.log_alpha + c)
+        log_alpha = self.log_alpha.clamp(-self.LOG_ALPHA_BOUND, self.LOG_ALPHA_BOUND)
+        pi = torch.sigmoid(log_alpha + c)
         return pi.sum()
 
     def get_l2_penalty(self) -> torch.Tensor:

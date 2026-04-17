@@ -280,3 +280,41 @@ class TestHardConcrete:
         # Both numbers come from the same temperature-aware distribution
         # so they must be close (within sampling-free rounding slack).
         assert abs(reported_sparsity - eval_sparsity) < 0.15
+
+    def test_extreme_logits_stay_finite(self):
+        """Very large logits must not produce NaN/Inf gates.
+
+        Without the `LOG_ALPHA_BOUND` clamp, ``log(u)`` for ``u ~ 0`` plus
+        a huge positive logit can push the sigmoid argument past fp16/bf16
+        range; in fp16 it also drops to ``-inf`` and produces ``NaN``. We
+        simulate that failure mode at fp32 by pushing logits to 1e3.
+        """
+        gate = HardConcrete(20, temperature=0.1, init_mean=0.5)
+        with torch.no_grad():
+            gate.qz_logits.fill_(1000.0)
+
+        gate.train()
+        for _ in range(50):
+            sampled = gate()
+            assert torch.isfinite(sampled).all()
+            assert torch.all(sampled >= 0) and torch.all(sampled <= 1)
+
+        gate.eval()
+        det = gate()
+        assert torch.isfinite(det).all()
+        assert torch.all(det >= 0) and torch.all(det <= 1)
+
+        penalty = gate.get_penalty()
+        assert torch.isfinite(penalty)
+
+        with torch.no_grad():
+            gate.qz_logits.fill_(-1000.0)
+        gate.train()
+        for _ in range(50):
+            assert torch.isfinite(gate()).all()
+        gate.eval()
+        assert torch.isfinite(gate()).all()
+
+    def test_uniform_eps_is_fp16_safe(self):
+        """The uniform sample floor should be >= ``1e-6`` (fp16 underflow)."""
+        assert HardConcrete._UNIFORM_EPS >= 1e-6
