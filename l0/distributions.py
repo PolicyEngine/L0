@@ -123,13 +123,18 @@ class HardConcrete(nn.Module):
         """
         Compute deterministic gates for evaluation.
 
+        Uses the mean of the Hard Concrete distribution, which applies the
+        temperature scaling to ``qz_logits`` so that ``eval()`` output is
+        consistent with ``_sample_gates`` and ``get_penalty`` /
+        ``get_active_prob`` (see Louizos et al. 2017, Eq. 11).
+
         Returns
         -------
         torch.Tensor
             Deterministic gate values in [0, 1]
         """
-        # Use mean of the distribution
-        probs = torch.sigmoid(self.qz_logits)
+        # Mean of the binary concrete before stretch: sigmoid(logits / beta).
+        probs = torch.sigmoid(self.qz_logits / self.temperature)
 
         # Apply stretching transformation
         gates = probs * (self.zeta - self.gamma) + self.gamma
