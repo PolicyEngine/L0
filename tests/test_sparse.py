@@ -241,3 +241,21 @@ class TestSparseL0Linear:
         torch.manual_seed(0)
         b = SparseL0Linear(n_features=20, init_keep_prob=0.5)
         torch.testing.assert_close(a.log_alpha.data, b.log_alpha.data)
+
+    def test_extreme_log_alpha_stays_finite(self):
+        """Very large `log_alpha` must not corrupt gates or penalty."""
+        from l0.sparse import SparseL0Linear
+
+        model = SparseL0Linear(n_features=30, init_keep_prob=0.5)
+        with torch.no_grad():
+            model.log_alpha.fill_(1000.0)
+
+        det_gates = model.get_deterministic_gates()
+        sample_gates = model._sample_gates()
+        penalty = model.get_l0_penalty()
+
+        assert torch.isfinite(det_gates).all()
+        assert torch.isfinite(sample_gates).all()
+        assert torch.isfinite(penalty)
+        assert torch.all(det_gates >= 0) and torch.all(det_gates <= 1)
+        assert torch.all(sample_gates >= 0) and torch.all(sample_gates <= 1)

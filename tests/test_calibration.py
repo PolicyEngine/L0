@@ -985,3 +985,19 @@ class TestSparseCalibrationWeights:
 
         assert "SparseCalibrationWeights" in l0.__all__
         assert l0.SparseCalibrationWeights is SparseCalibrationWeights
+
+    def test_extreme_log_alpha_stays_finite(self):
+        """Very large `log_alpha` must not corrupt gates or penalty."""
+        model = SparseCalibrationWeights(n_features=30, init_keep_prob=0.5)
+        with torch.no_grad():
+            model.log_alpha.fill_(1000.0)
+
+        det_gates = model.get_deterministic_gates()
+        sample_gates = model._sample_gates()
+        penalty = model.get_l0_penalty()
+
+        assert torch.isfinite(det_gates).all()
+        assert torch.isfinite(sample_gates).all()
+        assert torch.isfinite(penalty)
+        assert torch.all(det_gates >= 0) and torch.all(det_gates <= 1)
+        assert torch.all(sample_gates >= 0) and torch.all(sample_gates <= 1)

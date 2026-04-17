@@ -96,6 +96,16 @@ class HardConcrete(nn.Module):
 
         return gates
 
+    # Bounds for `qz_logits` before sigmoid/temperature scaling. Values
+    # outside ``[-LOG_ALPHA_BOUND, LOG_ALPHA_BOUND]`` saturate the sigmoid
+    # and vanish gradients; clamping keeps sampling and deterministic gates
+    # well-defined in fp16/bf16 as well. See Louizos et al. 2017.
+    LOG_ALPHA_BOUND: float = 20.0
+
+    # Epsilon for uniform sampling; fp16-safe (``1e-8`` underflows to zero
+    # at fp16 and ``log(0) = -inf``).
+    _UNIFORM_EPS: float = 1e-6
+
     def _sample_gates(self) -> torch.Tensor:
         """
         Sample gates using the reparameterization trick.
@@ -105,12 +115,19 @@ class HardConcrete(nn.Module):
         torch.Tensor
             Sampled gate values in [0, 1]
         """
-        # Sample uniform noise (avoiding exact 0 and 1 for numerical stability)
-        u = torch.zeros_like(self.qz_logits).uniform_(1e-8, 1.0 - 1e-8)
+        # Clamp logits to a safe range so log-odds stay finite under fp16/bf16
+        # and gradients don't vanish at saturation.
+        logits = self.qz_logits.clamp(-self.LOG_ALPHA_BOUND, self.LOG_ALPHA_BOUND)
+
+        # Sample uniform noise (avoiding exact 0 and 1 for numerical stability).
+        # ``1e-6`` matches calibration.py / sparse.py and is fp16-safe.
+        u = torch.zeros_like(logits).uniform_(
+            self._UNIFORM_EPS, 1.0 - self._UNIFORM_EPS
+        )
 
         # Apply the concrete distribution transformation
         # s = sigmoid((log(u) - log(1-u) + logits) / temperature)
-        s = torch.log(u) - torch.log(1 - u) + self.qz_logits
+        s = torch.log(u) - torch.log(1 - u) + logits
         s = torch.sigmoid(s / self.temperature)
 
         # Stretch and clamp to create hard concrete
@@ -133,8 +150,10 @@ class HardConcrete(nn.Module):
         torch.Tensor
             Deterministic gate values in [0, 1]
         """
+        # Clamp logits so eval output stays well-defined in fp16/bf16.
+        logits = self.qz_logits.clamp(-self.LOG_ALPHA_BOUND, self.LOG_ALPHA_BOUND)
         # Mean of the binary concrete before stretch: sigmoid(logits / beta).
-        probs = torch.sigmoid(self.qz_logits / self.temperature)
+        probs = torch.sigmoid(logits / self.temperature)
 
         # Apply stretching transformation
         gates = probs * (self.zeta - self.gamma) + self.gamma
@@ -150,10 +169,10 @@ class HardConcrete(nn.Module):
         torch.Tensor
             Expected number of non-zero gates
         """
+        # Clamp logits so sigmoid doesn't saturate and kill gradients.
+        logits = self.qz_logits.clamp(-self.LOG_ALPHA_BOUND, self.LOG_ALPHA_BOUND)
         # Shift logits to account for hard concrete bounds
-        logits_shifted = self.qz_logits - self.temperature * math.log(
-            -self.gamma / self.zeta
-        )
+        logits_shifted = logits - self.temperature * math.log(-self.gamma / self.zeta)
 
         # Probability that gate is active (non-zero)
         prob_active = torch.sigmoid(logits_shifted)
@@ -169,9 +188,8 @@ class HardConcrete(nn.Module):
         torch.Tensor
             Probability of each gate being non-zero
         """
-        logits_shifted = self.qz_logits - self.temperature * math.log(
-            -self.gamma / self.zeta
-        )
+        logits = self.qz_logits.clamp(-self.LOG_ALPHA_BOUND, self.LOG_ALPHA_BOUND)
+        logits_shifted = logits - self.temperature * math.log(-self.gamma / self.zeta)
         return torch.sigmoid(logits_shifted)
 
     def get_sparsity(self) -> float:
