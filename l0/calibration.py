@@ -47,6 +47,12 @@ class SparseCalibrationWeights(nn.Module):
         Set to 0 to disable jitter. Default is 0.01 (following Louizos et al.).
     device : str or torch.device
         Device to run computations on ('cpu' or 'cuda')
+    seed : int, optional
+        Seed for the RNG used by the `log_alpha` init jitter and (inside
+        ``fit``) the `log_weight` jitter. When set, two models with the same
+        inputs produce byte-identical initial `log_alpha` and jitter without
+        the caller having to manage PyTorch's global RNG. ``None`` (default)
+        preserves legacy behaviour of using the global RNG.
     """
 
     def __init__(
@@ -61,6 +67,7 @@ class SparseCalibrationWeights(nn.Module):
         log_alpha_jitter_sd: float = 0.01,
         device: str | torch.device = "cpu",
         use_gates: bool = True,
+        seed: int | None = None,
     ):
         super().__init__()
         self.n_features = n_features
@@ -71,6 +78,17 @@ class SparseCalibrationWeights(nn.Module):
         self.log_alpha_jitter_sd = log_alpha_jitter_sd
         self.device = torch.device(device)
         self.use_gates = use_gates
+        self.seed = seed
+
+        # Local RNG (only used when `seed` is provided). Kept on the module so
+        # `fit`'s `log_weight` jitter uses the same deterministic stream.
+        if seed is not None:
+            self._generator: torch.Generator | None = torch.Generator(
+                device=self.device
+            )
+            self._generator.manual_seed(int(seed))
+        else:
+            self._generator = None
 
         # Initialize weights (on original scale)
         if init_weights is None:
@@ -121,7 +139,8 @@ class SparseCalibrationWeights(nn.Module):
         # Add jitter to break symmetry (if specified)
         if self.log_alpha_jitter_sd > 0:
             jitter = (
-                torch.randn(n_features, device=self.device) * self.log_alpha_jitter_sd
+                torch.randn(n_features, generator=self._generator, device=self.device)
+                * self.log_alpha_jitter_sd
             )
             self.log_alpha = nn.Parameter(mu + jitter)
         else:
@@ -398,7 +417,17 @@ class SparseCalibrationWeights(nn.Module):
         # Add jitter to weights to break symmetry (if jitter_sd > 0)
         if self.log_weight_jitter_sd > 0:
             with torch.no_grad():
-                jitter = torch.randn_like(self.log_weight) * self.log_weight_jitter_sd
+                # `torch.randn_like` can't take a generator kwarg, so draw
+                # explicitly via `torch.randn` when a local RNG is set.
+                if self._generator is not None:
+                    noise = torch.randn(
+                        self.log_weight.shape,
+                        generator=self._generator,
+                        device=self.device,
+                    )
+                else:
+                    noise = torch.randn_like(self.log_weight)
+                jitter = noise * self.log_weight_jitter_sd
                 self.log_weight.data += jitter
 
         # Setup optimizer

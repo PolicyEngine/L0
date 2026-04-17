@@ -13,6 +13,8 @@ L0 is a PyTorch package implementing L0 regularization from Louizos, Welling, & 
 - **l0/layers.py**: L0Linear, L0Conv2d, L0DepthwiseConv2d, SparseMLP
 - **l0/gates.py**: L0Gate, SampleGate, FeatureGate, HybridGate
 - **l0/penalties.py**: L0/L2/L0L2 penalties, TemperatureScheduler, PenaltyTracker
+- **l0/calibration.py**: SparseCalibrationWeights (non-negative L0 weights for survey calibration)
+- **l0/sparse.py**: SparseL0Linear (L0-regularized linear regression for scipy.sparse inputs)
 - **tests/**: Comprehensive test coverage using TDD approach
 - **CI/CD**: GitHub Actions workflow for Python 3.13
 
@@ -24,12 +26,16 @@ l0/
 │   ├── distributions.py    # HardConcrete distribution
 │   ├── layers.py           # Neural network layers with L0
 │   ├── gates.py            # Standalone gates for selection
-│   └── penalties.py        # Penalty computation and utilities
+│   ├── penalties.py        # Penalty computation and utilities
+│   ├── calibration.py      # SparseCalibrationWeights (positive, sparse)
+│   └── sparse.py           # SparseL0Linear (scipy.sparse inputs)
 ├── tests/
 │   ├── test_distributions.py
 │   ├── test_layers.py
 │   ├── test_gates.py
-│   └── test_penalties.py
+│   ├── test_penalties.py
+│   ├── test_calibration.py
+│   └── test_sparse.py
 ├── docs/                   # Jupyter Book documentation (pending)
 ├── examples/               # Example notebooks (pending)
 ├── .github/workflows/ci.yml
@@ -50,11 +56,11 @@ pytest tests/ -v --cov=l0
 # Run specific test
 pytest tests/test_layers.py::TestL0Linear -v
 
-# Format code (79 char line length)
-black . -l 79
+# Format code (uses ruff format, default 88 char line length)
+ruff format .
 
 # Check formatting
-black . -l 79 --check
+ruff format --check .
 
 # Lint with ruff
 ruff check .
@@ -125,7 +131,7 @@ l0_lambda = 5.0e-07  # Tuned value from PolicyEngine
 ## Code Standards
 
 - **Python 3.13**: Required for latest features
-- **Black Formatter**: 79-character line length (PolicyEngine standard)
+- **Ruff formatter** (default 88-char line length)
 - **Type Hints**: All public functions fully typed
 - **Docstrings**: NumPy style with examples
 - **Imports**: Grouped (stdlib, third-party, local) and alphabetized
