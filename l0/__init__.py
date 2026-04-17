@@ -7,6 +7,7 @@ and intelligent sampling, based on Louizos, Welling, & Kingma (2017).
 
 __version__ = "0.5.0"
 
+from .calibration import SparseCalibrationWeights
 from .distributions import HardConcrete
 from .gates import FeatureGate, HybridGate, L0Gate, SampleGate
 from .layers import (
@@ -39,6 +40,8 @@ __all__ = [
     "prune_model",
     # Sparse
     "SparseL0Linear",
+    # Calibration
+    "SparseCalibrationWeights",
     # Gates
     "L0Gate",
     "SampleGate",

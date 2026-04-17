@@ -36,6 +36,12 @@ class SparseL0Linear(nn.Module):
         Initial probability of keeping each feature
     device : str or torch.device
         Device to run computations on ('cpu' or 'cuda')
+    seed : int, optional
+        Seed for the RNG used by the ``log_alpha`` init. When set, two
+        models with the same inputs produce byte-identical initial
+        ``log_alpha`` without the caller having to manage PyTorch's
+        global RNG. ``None`` (default) preserves legacy behaviour of
+        using the global RNG.
     """
 
     def __init__(
@@ -47,6 +53,7 @@ class SparseL0Linear(nn.Module):
         zeta: float = 1.1,
         init_keep_prob: float = 0.5,
         device: str | torch.device = "cpu",
+        seed: int | None = None,
     ):
         super().__init__()
         self.n_features = n_features
@@ -55,6 +62,15 @@ class SparseL0Linear(nn.Module):
         self.gamma = gamma
         self.zeta = zeta
         self.device = torch.device(device)
+        self.seed = seed
+
+        if seed is not None:
+            self._generator: torch.Generator | None = torch.Generator(
+                device=self.device
+            )
+            self._generator.manual_seed(int(seed))
+        else:
+            self._generator = None
 
         # Model parameters
         self.weight = nn.Parameter(torch.zeros(n_features, device=self.device))
@@ -63,11 +79,10 @@ class SparseL0Linear(nn.Module):
         else:
             self.register_parameter("bias", None)
 
-        # L0 gate parameters
+        # L0 gate parameters: mu + N(0, 0.01) jitter, optionally seeded.
         mu = torch.log(torch.tensor(init_keep_prob / (1 - init_keep_prob)))
-        self.log_alpha = nn.Parameter(
-            torch.normal(mu.item(), 0.01, size=(n_features,), device=self.device)
-        )
+        noise = torch.randn(n_features, generator=self._generator, device=self.device)
+        self.log_alpha = nn.Parameter(mu.item() + 0.01 * noise)
 
         # Cache for sparse tensor conversion
         self._cached_X_torch: torch.sparse.Tensor | None = None

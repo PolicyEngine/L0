@@ -961,3 +961,27 @@ class TestSparseCalibrationWeights:
                 f"normalize_groups=False should behave like no groups: "
                 f"{err_none:.4f} vs {err_no_norm:.4f}"
             )
+
+    def test_seed_produces_deterministic_log_alpha(self):
+        """Two models with the same `seed` must share `log_alpha` init."""
+        a = SparseCalibrationWeights(n_features=50, log_alpha_jitter_sd=0.1, seed=123)
+        b = SparseCalibrationWeights(n_features=50, log_alpha_jitter_sd=0.1, seed=123)
+        torch.testing.assert_close(a.log_alpha.data, b.log_alpha.data)
+
+        c = SparseCalibrationWeights(n_features=50, log_alpha_jitter_sd=0.1, seed=456)
+        assert not torch.allclose(a.log_alpha.data, c.log_alpha.data)
+
+    def test_seed_none_uses_global_rng(self):
+        """`seed=None` is the legacy behaviour: global RNG, caller-managed."""
+        torch.manual_seed(0)
+        a = SparseCalibrationWeights(n_features=20, log_alpha_jitter_sd=0.1)
+        torch.manual_seed(0)
+        b = SparseCalibrationWeights(n_features=20, log_alpha_jitter_sd=0.1)
+        torch.testing.assert_close(a.log_alpha.data, b.log_alpha.data)
+
+    def test_sparse_calibration_weights_exported(self):
+        """`SparseCalibrationWeights` must be importable from the top-level."""
+        import l0
+
+        assert "SparseCalibrationWeights" in l0.__all__
+        assert l0.SparseCalibrationWeights is SparseCalibrationWeights

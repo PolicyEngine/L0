@@ -224,3 +224,20 @@ class TestSparseL0Linear:
         assert not torch.allclose(y_stoch1, y_stoch2), (
             "Stochastic predictions should differ"
         )
+
+    def test_seed_produces_deterministic_log_alpha(self):
+        """Two models with the same `seed` must share `log_alpha` init."""
+        a = SparseL0Linear(n_features=50, init_keep_prob=0.5, seed=123)
+        b = SparseL0Linear(n_features=50, init_keep_prob=0.5, seed=123)
+        torch.testing.assert_close(a.log_alpha.data, b.log_alpha.data)
+
+        c = SparseL0Linear(n_features=50, init_keep_prob=0.5, seed=456)
+        assert not torch.allclose(a.log_alpha.data, c.log_alpha.data)
+
+    def test_seed_none_uses_global_rng(self):
+        """`seed=None` is the legacy behaviour: global RNG, caller-managed."""
+        torch.manual_seed(0)
+        a = SparseL0Linear(n_features=20, init_keep_prob=0.5)
+        torch.manual_seed(0)
+        b = SparseL0Linear(n_features=20, init_keep_prob=0.5)
+        torch.testing.assert_close(a.log_alpha.data, b.log_alpha.data)
