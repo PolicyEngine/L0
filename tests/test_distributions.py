@@ -247,8 +247,7 @@ class TestHardConcrete:
         deterministic = gate()
 
         expected = torch.clamp(
-            torch.sigmoid(gate.qz_logits / gate.temperature)
-            * (gate.zeta - gate.gamma)
+            torch.sigmoid(gate.qz_logits / gate.temperature) * (gate.zeta - gate.gamma)
             + gate.gamma,
             0,
             1,
