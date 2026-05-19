@@ -323,10 +323,8 @@ class TestSparseCalibrationWeights:
             )
 
             # Both should still fit reasonably well
-            y_pred_no_reg = model_no_reg.predict(M).cpu().numpy()
             y_pred_l2 = model_l2_only.predict(M).cpu().numpy()
 
-            error_no_reg = np.abs((y - y_pred_no_reg) / y).mean()
             error_l2 = np.abs((y - y_pred_l2) / y).mean()
 
             # L2 model may have slightly worse fit due to regularization
@@ -528,8 +526,6 @@ class TestSparseCalibrationWeights:
 
             # Average errors by group
             singleton_err_no_groups = rel_err_no_groups[:3].mean()
-            group3_err_no_groups = rel_err_no_groups[3:21].mean()
-            group4_err_no_groups = rel_err_no_groups[21:].mean()
 
             singleton_err_with_groups = rel_err_with_groups[:3].mean()
             group3_err_with_groups = rel_err_with_groups[3:21].mean()
@@ -960,6 +956,122 @@ class TestSparseCalibrationWeights:
             assert abs(err_none - err_no_norm) < 0.1, (
                 f"normalize_groups=False should behave like no groups: "
                 f"{err_none:.4f} vs {err_no_norm:.4f}"
+            )
+
+    def test_relative_epsilon_loss_ignores_errors_inside_tolerance(self):
+        """relative_epsilon leaves weights unchanged inside the tolerance tube."""
+        M = sp.identity(2, format="csr")
+        y = np.array([100.0, 100.0])
+        init_weights = np.array([105.0, 95.0])
+
+        model = SparseCalibrationWeights(
+            n_features=2,
+            init_weights=init_weights,
+            use_gates=False,
+        )
+        before = model.log_weight.detach().clone()
+
+        model.fit(
+            M,
+            y,
+            lambda_l0=0.0,
+            lr=0.5,
+            epochs=5,
+            loss_type="relative_epsilon",
+            target_tolerances=np.array([0.10, 0.10]),
+            target_scales=np.array([100.0, 100.0]),
+            verbose=False,
+        )
+
+        torch.testing.assert_close(model.log_weight.detach(), before)
+
+    def test_relative_epsilon_loss_penalizes_only_excess_error(self):
+        """relative_epsilon moves weights that are outside tolerance."""
+        M = sp.identity(2, format="csr")
+        y = np.array([100.0, 100.0])
+
+        model = SparseCalibrationWeights(
+            n_features=2,
+            init_weights=np.array([130.0, 105.0]),
+            use_gates=False,
+        )
+        before = torch.exp(model.log_weight.detach()).clone()
+
+        model.fit(
+            M,
+            y,
+            lambda_l0=0.0,
+            lr=0.1,
+            epochs=3,
+            loss_type="relative_epsilon",
+            target_tolerances=np.array([0.10, 0.10]),
+            target_scales=np.array([100.0, 100.0]),
+            verbose=False,
+        )
+
+        after = torch.exp(model.log_weight.detach())
+        assert after[0] < before[0]
+        torch.testing.assert_close(after[1], before[1])
+
+    def test_zero_target_weight_removes_target_from_loss(self):
+        """Zero-weight targets are predicted but do not affect gradients."""
+        M = sp.identity(2, format="csr")
+        y = np.array([100.0, 100.0])
+
+        model = SparseCalibrationWeights(
+            n_features=2,
+            init_weights=np.array([200.0, 50.0]),
+            use_gates=False,
+        )
+        before = torch.exp(model.log_weight.detach()).clone()
+
+        model.fit(
+            M,
+            y,
+            lambda_l0=0.0,
+            lr=0.1,
+            epochs=3,
+            loss_type="relative_epsilon",
+            target_weights=np.array([0.0, 1.0]),
+            target_tolerances=np.array([0.0, 0.0]),
+            target_scales=np.array([100.0, 100.0]),
+            verbose=False,
+        )
+
+        after = torch.exp(model.log_weight.detach())
+        torch.testing.assert_close(after[0], before[0])
+        assert after[1] > before[1]
+
+    def test_relative_epsilon_validates_target_vectors(self):
+        """Per-target loss vectors must align to the target axis."""
+        M = sp.identity(2, format="csr")
+        y = np.array([100.0, 100.0])
+        model = SparseCalibrationWeights(n_features=2, use_gates=False)
+
+        with pytest.raises(ValueError, match="target_tolerances array"):
+            model.fit(
+                M,
+                y,
+                epochs=1,
+                loss_type="relative_epsilon",
+                target_tolerances=np.array([0.1]),
+            )
+
+        with pytest.raises(ValueError, match="target_scales values"):
+            model.fit(
+                M,
+                y,
+                epochs=1,
+                loss_type="relative_epsilon",
+                target_scales=np.array([100.0, 0.0]),
+            )
+
+        with pytest.raises(ValueError, match="target_weights values"):
+            model.fit(
+                M,
+                y,
+                epochs=1,
+                target_weights=np.array([1.0, -1.0]),
             )
 
     def test_seed_produces_deterministic_log_alpha(self):

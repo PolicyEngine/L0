@@ -335,6 +335,9 @@ class SparseCalibrationWeights(nn.Module):
         target_groups: np.ndarray | None = None,
         normalize_groups: bool = True,
         group_multipliers: dict[int, float] | None = None,
+        target_weights: np.ndarray | None = None,
+        target_tolerances: np.ndarray | None = None,
+        target_scales: np.ndarray | None = None,
     ) -> "SparseCalibrationWeights":
         """
         Fit calibration weights using gradient descent.
@@ -354,7 +357,9 @@ class SparseCalibrationWeights(nn.Module):
         epochs : int
             Number of training epochs
         loss_type : str
-            Type of loss function: 'mse' or 'relative'
+            Type of loss function: 'mse', 'relative', or 'relative_epsilon'.
+            ``relative_epsilon`` penalizes only relative error outside
+            ``target_tolerances``.
         verbose : bool
             Whether to print progress
         verbose_freq : int
@@ -369,6 +374,19 @@ class SparseCalibrationWeights(nn.Module):
         group_multipliers : dict[int, float], optional
             Per-group loss scaling factors. Applied after normalization
             (if enabled). Requires target_groups to be set.
+        target_weights : numpy.ndarray, optional
+            Non-negative per-target loss weights. Positive weights are
+            normalized to mean one so callers can set priorities without
+            accidentally changing the overall data-loss scale. Zero-weight
+            targets remain in predictions and diagnostics but do not affect
+            the optimized data loss.
+        target_tolerances : numpy.ndarray, optional
+            Non-negative relative-error tolerance per target for
+            ``loss_type='relative_epsilon'``. Defaults to zero tolerance.
+        target_scales : numpy.ndarray, optional
+            Positive denominator per target for relative errors under
+            ``loss_type='relative_epsilon'``. Defaults to
+            ``max(abs(y), 1)``.
 
         Returns
         -------
@@ -377,9 +395,52 @@ class SparseCalibrationWeights(nn.Module):
         """
         # Convert y to tensor
         y = torch.tensor(y, dtype=torch.float32, device=self.device)
+        n_targets = int(y.numel())
+
+        valid_loss_types = {"mse", "relative", "relative_epsilon"}
+        if loss_type not in valid_loss_types:
+            raise ValueError(
+                f"loss_type must be one of {sorted(valid_loss_types)}, got {loss_type!r}"
+            )
+
+        target_weights_tensor = self._target_loss_vector(
+            target_weights,
+            n_targets=n_targets,
+            name="target_weights",
+            default=1.0,
+            minimum=0.0,
+        )
+        positive_weights = target_weights_tensor > 0
+        if positive_weights.any():
+            target_weights_tensor = target_weights_tensor / target_weights_tensor[
+                positive_weights
+            ].mean()
+
+        if loss_type == "relative_epsilon":
+            target_tolerances_tensor = self._target_loss_vector(
+                target_tolerances,
+                n_targets=n_targets,
+                name="target_tolerances",
+                default=0.0,
+                minimum=0.0,
+            )
+            if target_scales is None:
+                target_scales_tensor = y.abs().clamp_min(1.0)
+            else:
+                target_scales_tensor = self._target_loss_vector(
+                    target_scales,
+                    n_targets=n_targets,
+                    name="target_scales",
+                    default=1.0,
+                    minimum=0.0,
+                    strict_minimum=True,
+                )
+        else:
+            target_tolerances_tensor = None
+            target_scales_tensor = None
 
         # Convert M to torch sparse (will be cached)
-        M_torch = self._convert_sparse_to_torch(M)
+        self._convert_sparse_to_torch(M)
 
         # Validate group_multipliers
         if group_multipliers is not None and target_groups is None:
@@ -411,6 +472,7 @@ class SparseCalibrationWeights(nn.Module):
                     group_weights[group_mask] *= mult
         else:
             group_weights = torch.ones_like(y)
+        loss_weights = group_weights * target_weights_tensor
 
         if verbose:
             if target_groups is not None:
@@ -453,14 +515,23 @@ class SparseCalibrationWeights(nn.Module):
                 # Adding 1 to avoid division by zero
                 relative_errors = (y - y_pred) / (y + 1)
                 # Apply group weights and then average
-                weighted_squared_errors = relative_errors.pow(2) * group_weights
+                weighted_squared_errors = relative_errors.pow(2) * loss_weights
+                data_loss = (
+                    weighted_squared_errors.sum()
+                )  # Sum because weights already normalize
+            elif loss_type == "relative_epsilon":
+                relative_errors = (y - y_pred) / target_scales_tensor
+                excess_errors = (
+                    relative_errors.abs() - target_tolerances_tensor
+                ).clamp_min(0.0)
+                weighted_squared_errors = excess_errors.pow(2) * loss_weights
                 data_loss = (
                     weighted_squared_errors.sum()
                 )  # Sum because weights already normalize
             else:
                 # Standard MSE with group weighting
                 squared_errors = (y - y_pred).pow(2)
-                weighted_squared_errors = squared_errors * group_weights
+                weighted_squared_errors = squared_errors * loss_weights
                 data_loss = (
                     weighted_squared_errors.sum()
                 )  # Sum because weights already normalize
@@ -487,7 +558,9 @@ class SparseCalibrationWeights(nn.Module):
 
                     # Compute relative errors for meaningful output
                     y_det = self.forward(M, deterministic=True)
-                    if loss_type == "relative":
+                    if loss_type == "relative_epsilon":
+                        rel_errors = torch.abs((y - y_det) / target_scales_tensor)
+                    elif loss_type == "relative":
                         rel_errors = torch.abs((y - y_det) / (y + 1))
                     else:
                         # For MSE, show relative errors anyway for interpretability
@@ -550,8 +623,6 @@ class SparseCalibrationWeights(nn.Module):
                         weight_dist = "[no active weights]"
 
                     # Calculate components of the actual loss being minimized
-                    actual_data_loss = data_loss.item()
-                    actual_l0_loss = l0_loss.item()
                     actual_total_loss = loss.item()
 
                     if target_groups is not None:
@@ -574,6 +645,42 @@ class SparseCalibrationWeights(nn.Module):
                         )
 
         return self
+
+    def _target_loss_vector(
+        self,
+        values: np.ndarray | None,
+        *,
+        n_targets: int,
+        name: str,
+        default: float,
+        minimum: float,
+        strict_minimum: bool = False,
+    ) -> torch.Tensor:
+        """Return a validated per-target loss vector on the model device."""
+
+        if values is None:
+            return torch.full(
+                (n_targets,),
+                float(default),
+                dtype=torch.float32,
+                device=self.device,
+            )
+        tensor = torch.tensor(values, dtype=torch.float32, device=self.device)
+        if tensor.shape != (n_targets,):
+            raise ValueError(
+                f"{name} array must have shape ({n_targets},), got {tensor.shape}"
+            )
+        if not torch.isfinite(tensor).all():
+            raise ValueError(f"{name} must contain only finite values")
+        if strict_minimum:
+            invalid = tensor <= minimum
+            comparator = ">"
+        else:
+            invalid = tensor < minimum
+            comparator = ">="
+        if invalid.any():
+            raise ValueError(f"{name} values must be {comparator} {minimum}")
+        return tensor
 
     def predict(self, M: sp.spmatrix) -> torch.Tensor:
         """
