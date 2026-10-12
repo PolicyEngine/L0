@@ -58,6 +58,10 @@ Repository = "https://github.com/PolicyEngine/L0"
 Documentation = "https://github.com/PolicyEngine/L0#readme"
 Issues = "https://github.com/PolicyEngine/L0/issues"
 
+[tool.ruff]
+# ruff 0.16+ also formats Markdown code blocks; keep formatting checks to Python.
+extend-exclude = ["*.md"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = ["test_*.py"]
