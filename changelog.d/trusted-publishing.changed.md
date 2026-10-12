@@ -1,0 +1,1 @@
+Publish to PyPI with trusted publishing (OIDC) from the `pypi` environment instead of a stored API token, and replace the retired Black format check in the push workflow with Ruff (limited to Python files) so the release job can run again.
